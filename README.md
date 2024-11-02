@@ -14,7 +14,7 @@ pip install llama-index-core llama-index-readers-file llama-index-llms-ollama
 pip install llama-index-embeddings-huggingface #(local embedding to save cost)
 
 #test api locally
-uvicorn main:app --reload
+uvicorn app.main:app --reload (run this under app folder)
 
 lsof -i :8000 (show the process using the port)
 kill -9 <pid>
@@ -39,3 +39,6 @@ az deployment group operation list --resource-group rg-rag --name Microsoft.Cont
 1. source .venv/bin/activate
 2. uvicorn app.main:app --port 8001 (default port is 8000)
 3. http://localhost:8000 
+
+##weaviate embeded
+https://weaviate.io/developers/weaviate/installation/embedded
