@@ -3,7 +3,9 @@ import os
 import json
 import sys
 import logging
+import traceback
 import weaviate
+from weaviate import use_async_with_weaviate_cloud
 from weaviate.classes.query import MetadataQuery
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -13,8 +15,6 @@ from utils import utils
 from vector_stores import vector_stores as vector_store  
 import  vectordb_create_schema as create_schema
 
-from dotenv import load_dotenv
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -22,53 +22,80 @@ logging.basicConfig(
     level=logging.WARNING  # You can change this to DEBUG, WARNING, etc., as needed
 )
 
-# Set API keys and Weaviate URL from environment variables
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")  # Weaviate API key
-WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
-pdf_file_path =  os.getenv("LOCAL_FILE_INPUT_PATH")
-class_name = configs.WEAVIATE_STORE_NAME
+
 vector_store = vector_store
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+pdf_file_path = configs.pdf_file_path
+class_name =configs.class_name
+class_description =configs.WEAVIATE_STORE_DESCRIPTION
+OPENAI_API_KEY = configs.OPENAI_API_KEY
+os.environ['OPENAI_API_KEY']=OPENAI_API_KEY
 
-def query (query, vector_store = vector_store,   class_name = class_name, limit = 5):
+
+
+def query (query,   class_name = class_name, limit = 5):
     try: 
-        client = vector_store.create_client()
+        #client = vector_store.create_client()
+        error_json = None
 
-        if not utils.check_collection_exists(client, class_name):
-            create_schema.create_collection(client, class_name)
-            print( " = 3.0. query collection:create collection first ", query, " " , class_name)
-        
-        if not client.is_live() :  # Check if the client is closed
+        try:
             client = vector_store.create_client()
-            print( " = 3.1. init client, as previous client be closed")
+            print (" xxxxxx ")
+        except:
+            client = weaviate.connect_to_local( headers = {"X-OpenAI-Api-Key": OPENAI_API_KEY})
+            print (" yyyyyyy  ")
 
+
+        print (f" ==== retrieve.py {query} " , client.collections.exists(class_name))
+        print()
+    
+        if not client.collections.exists(class_name):
+            error_json = {
+                "error": {
+                    "code": 1001,
+                    "message": "Collection is not in system",
+                    "details": "Ensure vector store created and upload data."
+                }
+            }
+            print (" === collection doesn't exist: ", error_json)
+            return error_json
+        
         collection = client.collections.get(class_name)
+        
 
         if query is None:
             pass
         else:      
             response = collection.query.hybrid(
                 query=query,
-                alpha=0.5,
-                limit=limit,
+                alpha=0.75,
+                limit=5,
                 return_metadata=MetadataQuery(score=True, explain_score=True),
             )
-            
+            print ()
+            print (f" ===  retrieve.py response for limit of  {limit}====" , response)
+            print(" ****** ", utils.get_total_object_count(client))
             return response
         
     except Exception as e:
             print(f"Error: {e}")  # Handles errors, such as when an object already exists to avoid duplicates
+            print (traceback.format_exc())
             logging.warning(f"Exception occurred: {e}")  # Logs with stack trace
 
             """
             Sample Error:
             1. File already uploaded: uuid will duplicate: Error: Object was not added! Unexpected status code: 422, with response body: {'error': [{'message': "id '89695fbf-06c7-599c-8da2-2c11028dd130' already exists"}]}.
-
             """
+            error_json = {
+                "error": {
+                    "code": 500,
+                    "message": "An internal error occurred while processing the request.",
+                    "details": str(e)
+                }
+            }
+            return error_json
 
-    finally: 
-        None
+    #finally: 
+        # None
         #vector_store.close_client(client)
 
 
@@ -133,7 +160,7 @@ def retrieve_graphql():
     None
   
 def main():
-    retrieve_semantic_vector_search()
+     query ("constituation",   limit = 5)
 
 # Call the main function
 if __name__ == "__main__":

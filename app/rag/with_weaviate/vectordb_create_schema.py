@@ -27,7 +27,6 @@ text2vec_model=configs.text2vec_model
 
 
 
-
 # vectorizer_config=None
 # multiple models: text_model for prompt; image_model for images, 
 # all models need to have same dimension, otherwise, will error out 
@@ -84,7 +83,7 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
     vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_openai( model=text2vec_model)  
     vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_transformers( ) 
     """
-   
+    #client = vector_store.create_client()
     if utils.check_collection_exists(client, class_name):
         print(f"Collection '{class_name}' already exists.")
         return
@@ -127,16 +126,16 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
             ),
         )
 
-        print (f" = 0. create_schem.py: {class_name} created ")
+        print (f" === create_schema.py === : {class_name} created ")
         print ()
-        #print(collection)
+       
         
     except Exception as e:
         print(f"Error: {e}")
         #traceback.print_exc()
     finally:
-        
-        client.close()
+        pass
+        # client.close() don't close client 
 
 
 
@@ -156,8 +155,7 @@ if __name__ == "__main__":
 
 
     #without vector, use outside ; default vector = None 
-    create_collection(client, class_name=class_name,class_description=class_description)
+    create_collection(vector_store, class_name=class_name,class_description=class_description)
 
     #create_schema_multi_model (client, class_name) 
 
-    vector_store.close_client(client)

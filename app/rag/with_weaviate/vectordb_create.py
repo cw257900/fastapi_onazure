@@ -12,6 +12,7 @@ from weaviate.classes.init import Auth
 from weaviate.exceptions import WeaviateBaseError 
 from weaviate.util import generate_uuid5
 from langchain_huggingface import HuggingFaceEmbeddings
+import  vectordb_create_schema as create_schema
 import logging 
 
 # Configure logging
@@ -22,6 +23,7 @@ logging.basicConfig(
 
 
 # Add the parent directory (or wherever "with_pinecone" is located) to the Python path
+# those imports used in testing from main
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from chunking import chunking_recursiveCharacterTextSplitter
 from embeddings import  embedding_openai 
@@ -30,23 +32,11 @@ import vectordb_create_schema as vectordb_create_schema
 from configs import configs
 from utils import utils
 
-from dotenv import load_dotenv
-load_dotenv()
+pdf_file_path = configs.pdf_file_path
+class_name = configs.class_name
+class_description = configs.WEAVIATE_STORE_DESCRIPTION
+OPENAI_API_KEY = configs.OPENAI_API_KEY
 
-# Set API keys and Weaviate URL from environment variables
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")  # Weaviate API key
-WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
-#pdf_file_path =  os.getenv("LOCAL_FILE_INPUT_PATH")
-pdf_file_path = os.path.join(os.getcwd(), "data")
-
-print (" === pdf_file_path: ", pdf_file_path)
-print ()
-
-class_name =configs.WEAVIATE_STORE_NAME
-class_description =configs.WEAVIATE_STORE_DESCRIPTION
-os.environ["OPENAI_API_KEY"]  = OPENAI_API_KEY
-    
 
 
 # Assuming embeddings.embeddings.aembed_documents is async and we are running this in an async environment
@@ -119,16 +109,37 @@ async def upsert_embeddings_to_vector_store(pdf_file_path, vector_store,  class_
 # if same file updated already, it will throw exception : Unexpected status code: 422, 
 # with response body: {'error': [{'message': "id '8a5c4432-9a82-5f98-b9dd-5ca80b77cd13' already exists"}]}
 
-def upsert_chunks_to_store(pdf_dir_path, vector_store, class_name):
-    status = False
+async def upsert_chunks_to_store (pdf_file_path, 
+                           client, 
+                           class_name):
+    
+    response = {
+        "status": True,  # Initial status is set to True
+        "error": []      # Initialize error as an empty list
+    }
+    error_json = []
 
-    client = vector_store.create_client()
-    collection_name = client.collections.get(class_name)
+    print (" === *create.py client", client)
+    
+    client.connect()
+
+    if not client.collections.exists(class_name):
+        create_schema.create_collection(client, class_name)
+        print( " = create schema with class_name: ", class_name)
+    
+
+    try: 
+        collection_name = client.collections.get(class_name)
+    except:
+        client.connect()
+        print (" ==== *create.py reconnect client if needed === ")
+
+    print (" === *create.py pdf_file_path ", pdf_file_path)
 
      # Iterate through all files in the specified directory
-    for filename in os.listdir(pdf_dir_path):
+    for filename in os.listdir(pdf_file_path):
         try: 
-            file_path = os.path.join(pdf_dir_path, filename)
+            file_path = os.path.join(pdf_file_path, filename)
 
             logging.info("uploading files under: " , file_path)
 
@@ -137,7 +148,7 @@ def upsert_chunks_to_store(pdf_dir_path, vector_store, class_name):
                 print(f"1. Inserting chunks of {file_path} - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
                 # This is a sentence-based chunker
-                docs = chunking_recursiveCharacterTextSplitter.get_chunked_doc(file_path)
+                docs =  chunking_recursiveCharacterTextSplitter.get_chunked_doc(file_path)
 
                 # Iterate through the processed docs and insert them into Weaviate
                 for idx, doc in enumerate(docs):
@@ -161,46 +172,68 @@ def upsert_chunks_to_store(pdf_dir_path, vector_store, class_name):
 
                 print(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - All chunks inserted for {file_path}")
             else: 
-                print(f"Skipping non-PDF file: {file_path}")
-           
+                if not filename.startswith('.') : #ignore .DS_Store file
+                    response["error"].append({
+                        "code": "0001",
+                        "message": f"Warning: Skipping non-PDF file: {file_path}",
+                        "details": f"Warning: Skipping non-PDF file: {file_path}"
+                    })
 
         except Exception as e:
             print(f"Error: {e}")  # Handles errors, such as when an object already exists to avoid duplicates
             logging.warning(f"Exception occurred: {e}")  # Logs with stack trace
+            traceback.print_exc() 
 
             """
             Sample Error:
             1. File already uploaded: uuid will duplicate: Error: Object was not added! Unexpected status code: 422, with response body: {'error': [{'message': "id '89695fbf-06c7-599c-8da2-2c11028dd130' already exists"}]}.
 
             """
-            pass #go to next file
+            response["status"] = False
+            response["error"].append({
+                "code": "1002",
+                "message": "An internal error occurred while processing the request.",
+                "details": str(e)
+            })
+          
+            
 
  
     # The Python client uses standard HTTP requests, which are automatically closed after the response is received.
     vector_store.close_client(client)
+    print()
+    print (" === create object ", response)
+    print()
+    return response 
+ 
 
-    return status
 
 
+async def main ():
+    
+    pdf_file_path=configs.pdf_file_path
+    client = vector_store.create_client()
 
-
-
-def upsert_multi_models (pdf_file_path, vector_store, class_name):
-    None
-
-def main ():
     print(pdf_file_path)
     print(class_name)
     print()
 
     # Use asyncio.run to run the async function
     # asyncio.run(upsert_embeddings_to_vector_store(pdf_file_path, vector_store=vector_store, class_name=class_name))
-    upsert_chunks_to_store(pdf_file_path, vector_store, class_name)
+    status = await upsert_chunks_to_store(pdf_file_path, 
+                           client,  
+                           class_name=class_name)
+    print()
+    print (status)
+    print(pdf_file_path)
+    print(class_name)
+    print()
    
 
 # Entry point
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
 
 
 

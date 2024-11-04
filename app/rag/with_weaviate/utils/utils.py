@@ -18,21 +18,7 @@ os.environ["LOG_LEVEL"] = "ERROR"
 # Add the parent directory (or wherever "with_pinecone" is located) to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import vector_stores.vector_stores as vector_store
-
 import configs.configs as configs
-
-# Load environment variables
-load_dotenv()
-
-# Get environment variables
-# Set API keys and Weaviate URL from environment variables
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")  # Weaviate API key
-WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
-pdf_file_path =  os.getenv("LOCAL_FILE_INPUT_PATH")
-class_name =configs.WEAVIATE_STORE_NAME
-class_description =configs.WEAVIATE_STORE_DESCRIPTION
-
 
 # Function to check if a collection (class) exists
 def check_collection_exists(client, collection_name: str) -> bool:
@@ -120,7 +106,7 @@ def delete_by_uuid (client, class_name, uuid) :
 def main():
     print ()
     print ("weaviate version:", weaviate.__version__)
-    print ("weaviate url:", WEAVIATE_URL)
+    print ("weaviate url:", configs.WEAVIATE_URL)
 
 
     client = vector_store.create_client()
@@ -128,12 +114,13 @@ def main():
     #collection = client.collections.get(class_name)
     #delete_objects(client, class_name)
     print ()
-    print (" === class name: " , class_name)
-    print (" === collection existing: ", check_collection_exists (client, class_name) )
+    print (" === class name: " , configs.class_name)
+    print (" === collection existing: ", check_collection_exists (client, configs.class_name) )
     print (" === total counts of objects: ", get_total_object_count(client))
 
 
-    vector_store.close_client(client)
+    delete_objects(client, configs.class_name)
+
     print()
   
    

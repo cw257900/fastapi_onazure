@@ -26,14 +26,22 @@ app = FastAPI()
 def read_root():
     return {"use /prompt/'ask' to query; use /upload to load data"}
 
+@app.get("/upload")
+async def upload_data():
+    response = await rag_weaviate.rag_upload()
+    
+    return response
+    
+
+
 @app.get("/query/{ask}")
 async def retrive_json (ask:str):
 
-    print (" = 1. main " ,ask)
-    json_list = await run_in_threadpool(rag_weaviate.rag_retrieval, ask)
+    indexed_object= rag_weaviate.rag_retrieval( ask, limit =5 )
+    #json_list = await run_in_threadpool(rag_weaviate.rag_retrieval, ask, limit =2)
 
-    print (" = 1. main " ,json_list)
-    return json_list 
+    print ( " ****** main.py *****  ", indexed_object)
+    return indexed_object 
     
 
 
@@ -42,9 +50,6 @@ async def read_llamindex (ask: str):
    
     response = await run_in_threadpool(rag_llamaindex.rag_lli, ask)
 
-    # Log the prompt and response
-    #logger.info(f"Prompt = {ask}: Answer = {response}")
-    
     if response is None:
         #logger.warning(f"No response generated for prompt: {ask}")
         return {"Prompt": "No response generated"}

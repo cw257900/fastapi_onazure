@@ -11,15 +11,9 @@ from weaviate.embedded import EmbeddedOptions
 # Add the parent directory (or wherever "with_pinecone" is located) to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from configs import configs
+OPENAI_API_KEY=configs.OPENAI_API_KEY
+os.environ['OPENAI_API_KEY']=OPENAI_API_KEY
 
-
-from dotenv import load_dotenv
-load_dotenv()
-
-# Set API keys and Weaviate URL from environment variables
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
-WEAVIATE_STORE_NAME = configs.WEAVIATE_STORE_NAME  # WEAVIATE_STORE_NAME
 
 
 ## Function to create and return a Weaviate client object
@@ -31,14 +25,22 @@ def create_client():
     headers = {"X-OpenAI-Api-Key": OPENAI_API_KEY}
 
     # Initialize connection params
+    """
     connection_params = ConnectionParams(
         http={"host": WEAVIATE_HOST, "port": WEAVIATE_HTTP_PORT, "secure": False, "additional_headers": headers},
         grpc={"host": WEAVIATE_HOST, "port": WEAVIATE_GRPC_PORT, "secure": False}
     )
-
+    """
     # client = weaviate.connect_to_local( headers = {"X-OpenAI-Api-Key": OPENAI_API_KEY})
 
     # client = weaviate.connect_to_embedded( headers = {"X-OpenAI-Api-Key": OPENAI_API_KEY})
+    """
+    client = weaviate.use_async_with_embedded (
+        version="1.26.1",
+        headers={"X-OpenAI-Api-Key": OPENAI_API_KEY},
+        port=8081,
+        grpc_port=50051,
+    )
     
     client = weaviate.WeaviateClient(
         embedded_options=EmbeddedOptions(
@@ -50,7 +52,20 @@ def create_client():
         ),
         additional_headers= {"X-OpenAI-Api-Key": OPENAI_API_KEY }
     )
-    client.connect()
+    #client.connect()
+    """
+    
+  
+    client = weaviate.connect_to_embedded(
+        version="latest",
+        persistence_data_path="./weaviate_data",
+        headers= headers,
+        environment_variables={
+            "ENABLE_MODULES": "text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai",
+        }
+    )
+ 
+    print (" *** vectore_stores.py: embeded client initated " , client)
 
 
     return client
@@ -67,4 +82,11 @@ if __name__ == "__main__":
 
     client = create_client()
     print (client)
+    if not client.collections.exists("Test"):
+        collection = client.collections.create("Test")
+    else:
+        collection = client.collections.get("Test")
+    collection.data.insert({"text": "this is a test " })
+    print (collection)
+    client.close()
 
