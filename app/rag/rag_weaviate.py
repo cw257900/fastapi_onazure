@@ -7,10 +7,11 @@ import weaviate
 import warnings
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-import with_weaviate.vectordb_retrieve as retrive 
-import with_weaviate.vectordb_create as create 
-from with_weaviate.vector_stores import vector_stores  as vectore_store
+s#ys.path.append(os.path.dirname(os.path.abspath(__file__)))
+#import with_weaviate.vectordb_retrieve as retrive 
+#import with_weaviate.vectordb_create as create 
+#from with_weaviate.vector_stores import vector_stores  as vectore_store
+
 
 # Configure logging
 logging.basicConfig(
@@ -21,10 +22,10 @@ logging.basicConfig(
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from with_weaviate.configs import configs
-from with_weaviate.utils import utils
 from with_weaviate.vector_stores import vector_stores as vector_store
+import with_weaviate.vectordb_create as create 
+import with_weaviate.vectordb_retrieve as retrive 
 
 
 
@@ -33,14 +34,10 @@ async def rag_upload ():
         client = vector_store.create_client()
     except:
          client = weaviate.connect_to_local(port=8079, grpc_port=50050,  headers = {"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
-
-    pdf_file_path = configs.pdf_file_path
     
     response = await create.upsert_chunks_to_store(configs.pdf_file_path,  client , configs.class_name) 
 
-    logging.info(f"{configs.pdf_file_path} to {configs.class_name} : response details: {response}")
-
-    print (" upload is done ")
+    logging.info(f"{configs.pdf_file_path} is updated to {configs.class_name} : response details: {response}")
 
     return response 
 
