@@ -19,7 +19,7 @@ logging.basicConfig(
 )
 
 
-# Add the parent directory (or wherever "with_pinecone" is located) to the Python path
+# Add the parent directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from with_weaviate.configs import configs
