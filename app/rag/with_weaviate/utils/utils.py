@@ -112,14 +112,12 @@ def main():
     client = vector_store.create_client()
 
     #collection = client.collections.get(class_name)
-    #delete_objects(client, class_name)
+    delete_objects(client, configs.class_name)
     print ()
     print (" === class name: " , configs.class_name)
     print (" === collection existing: ", check_collection_exists (client, configs.class_name) )
     print (" === total counts of objects: ", get_total_object_count(client))
 
-
-    delete_objects(client, configs.class_name)
 
     print()
   

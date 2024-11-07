@@ -15,12 +15,16 @@ pip install llama-index-embeddings-openai #(need openai key)
 pip install llama-index-core llama-index-readers-file llama-index-llms-ollama 
 pip install llama-index-embeddings-huggingface #(local embedding to save cost)
 
+pip freeze > requirements.txt
+
+
 # test api locally without image and docker
 1. source .venv/bin/activate
 2. uvicorn app.main:app --port 8001 (default port is 8000)
 3. http://localhost:8000 
 4. validate port and kill hanging process
-lsof -i :8000 (show the process using the port)
+ps aux | grep weaviate
+lsof -i :8000 (show the process using the port, default port for embeded port=8081, grpc_port=50051)
 kill -9 <pid>
 
 # create Dockerfile locally 
