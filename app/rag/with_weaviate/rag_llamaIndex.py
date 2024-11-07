@@ -6,7 +6,7 @@ import sys
 import base64
 from sentence_transformers import SentenceTransformer
 from PIL import Image
-import pytesseract
+#import pytesseract
 import requests
 from pathlib import Path 
 import llama_index

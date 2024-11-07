@@ -46,7 +46,7 @@ def create_client():
         }
     )
  
-    print (" *** vectore_stores.py: embeded client initated " , client)
+    print (" === vectore_stores.py: embeded client initated " , client)
 
 
     return client
