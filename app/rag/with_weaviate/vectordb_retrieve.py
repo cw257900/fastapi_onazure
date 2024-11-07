@@ -39,10 +39,10 @@ def query (query,   class_name = class_name, limit = 5):
 
         try:
             client = vector_store.create_client()
-            print (" xxxxxx ")
+            print (" ==== retrive.py, using embeded client")
         except:
             client = weaviate.connect_to_local( headers = {"X-OpenAI-Api-Key": OPENAI_API_KEY})
-            print (" yyyyyyy  ")
+           
 
 
         print (f" ==== retrieve.py {query} " , client.collections.exists(class_name))
@@ -53,10 +53,10 @@ def query (query,   class_name = class_name, limit = 5):
                 "error": {
                     "code": 1001,
                     "message": "Collection is not in system",
-                    "details": "Ensure vector store created and upload data."
+                    "details": "Ensure vector store created and have data uploaded."
                 }
             }
-            print (" === collection doesn't exist: ", error_json)
+            print (" === collection doesn't exist, Run *create_schema.py first:  ", error_json)
             return error_json
         
         collection = client.collections.get(class_name)
@@ -71,10 +71,22 @@ def query (query,   class_name = class_name, limit = 5):
                 limit=5,
                 return_metadata=MetadataQuery(score=True, explain_score=True),
             )
-            print ()
-            print (f" ===  retrieve.py response for limit of  {limit}====" , response)
-            print(" ****** ", utils.get_total_object_count(client))
-            return response
+            
+    
+            if (utils.get_total_object_count(client) == 0):
+                error_json = {
+                    "error": {
+                        "code": 1002,
+                        "message": "Vector Collection is created, but has no data yet",
+                        "details": "Vector Collection is created, but has no data yet"
+                    }
+                }
+                print (f" ===  retrieve.py response for limit of  {limit}. collection exists, but has no data yet. Run *create.py to upload data  ", error_json)
+                print ()
+                return error_json
+            
+            else: 
+                return response
         
     except Exception as e:
             print(f"Error: {e}")  # Handles errors, such as when an object already exists to avoid duplicates

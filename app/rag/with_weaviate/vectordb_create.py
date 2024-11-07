@@ -1,6 +1,10 @@
 import os
 import json
-from datetime import datetime
+import datetime
+from datetime import datetime, timezone
+# Get the current datetime in UTC and format it as RFC3339
+upload_date = datetime.now(timezone.utc).isoformat()
+
 import asyncio
 import sys
 import traceback 
@@ -115,7 +119,7 @@ async def upsert_chunks_to_store (pdf_file_path,
     
     response = {
         "status": True,  # Initial status is set to True
-        "error": []      # Initialize error as an empty list
+        "error": ['None']      # Initialize error as an empty list
     }
     error_json = []
 
@@ -145,7 +149,7 @@ async def upsert_chunks_to_store (pdf_file_path,
 
             # Check if the current file is a PDF
             if os.path.isfile(file_path) and file_path.lower().endswith('.pdf') and  not filename.startswith('.') :
-                print(f"1. Inserting chunks of {file_path} - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                print(f"1. Inserting chunks of {file_path} ")
 
                 # This is a sentence-based chunker
                 docs =  chunking_recursiveCharacterTextSplitter.get_chunked_doc(file_path)
@@ -160,7 +164,7 @@ async def upsert_chunks_to_store (pdf_file_path,
                         "page_content": doc.page_content,  # Add doc content as metadata
                         "page_number": page_number,        # Add page number as metadata
                         "source": file_path,               # Add file path as metadata
-                        "uploadDate": datetime.now().isoformat()  # e.g., '2023-11-05T15:30:00'
+                        "uploadDate": upload_date  # e.g., '2023-11-05T15:30:00'
                     }
 
                     # Insert the object along with its vector into Weaviate
@@ -169,9 +173,9 @@ async def upsert_chunks_to_store (pdf_file_path,
                         uuid=generate_uuid5(data_object),
                     )
 
-                    print(f"Inserted: Page {page_number} - Chunk {idx} - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                    print(f"Inserted: Page {page_number} - Chunk {idx} ")
 
-                print(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - All chunks inserted for {file_path}")
+                print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - All chunks inserted for {file_path}")
             else: 
                 if not filename.startswith('.') : #ignore .DS_Store file
                     response["error"].append({
