@@ -33,7 +33,7 @@ async def rag_upload ():
     try:
         client = vector_store.create_client()
     except:
-         client = weaviate.connect_to_local(port=8079, grpc_port=50050,  headers = {"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
+         client = weaviate.connect_to_local(port=8079, grpc_port=50050,  headers = {"X-OpenAI-Api-Key": configs.OPENAI_API_KEY}) #if embeded is not working, use local; actually should kill hanging embeded process if there are conflicts
     
     response = await create.upsert_chunks_to_store(configs.pdf_file_path,  client , configs.class_name) 
 
@@ -45,12 +45,11 @@ async def rag_upload ():
 def rag_retrieval (prompt, limit=2):
 
     json_list = []
-    print (" = 2.0 rag asking ", prompt)
+    print (" === rag_retrieval that rag asking ", prompt)
     hybrid_rlt = retrive.query(prompt,  limit=limit)
 
-    print (f" = 2.0 rag answer hybrid_rlt with {limit}", hybrid_rlt)
+    print (f" === rag_retrieval that rag answer hybrid_rlt with {limit}", hybrid_rlt)
     print (hybrid_rlt)
-
   
     if isinstance(hybrid_rlt, dict):
         if 'error' in hybrid_rlt:
@@ -65,8 +64,6 @@ def rag_retrieval (prompt, limit=2):
             print(f" === {idx} rag page_content ", o.properties.get("page_content"))
             print(f" === {idx} rag score ", o.metadata.score)
             print(f" === {idx} rag explain_score ", o.metadata.explain_score)
-            
-            
             
             json_object = {
                 "page_content": o.properties.get("page_content"),
@@ -85,8 +82,6 @@ def rag_retrieval (prompt, limit=2):
     print()
     return indexed_object
     
-
-
 if __name__ =="__main__" :
     prompt = "sumerize the insurance document"
     rag_retrieval("Sumarize Constitution", limit=2)
