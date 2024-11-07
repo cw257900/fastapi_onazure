@@ -23,6 +23,7 @@ pip freeze > requirements.txt
 2. uvicorn app.main:app --port 8001 (default port is 8000)
 3. http://localhost:8000 
 4. validate port and kill hanging process
+ps aux | grep weaviate
 lsof -i :8000 (show the process using the port, default port for embeded port=8081, grpc_port=50051)
 kill -9 <pid>
 

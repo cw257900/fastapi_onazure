@@ -70,7 +70,7 @@ def rag_retrieval (prompt, limit=2):
                 "page_content": o.properties.get("page_content"),
                 "page_number": o.properties.get("page_number"),
                 "source": o.properties.get("source"),
-                "uploadDate": o.properties.get("uploadDate").isoformat(), #covert date to json comparable ISO 8601 string
+                #"uploadDate": o.properties.get("uploadDate").isoformat(), #covert date to json comparable ISO 8601 string. 
                 "score": o.metadata.score,
                 "explain_score": str(o.metadata.explain_score).replace("\n", "")
             }

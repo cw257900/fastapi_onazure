@@ -17,6 +17,8 @@ WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
 
 chunk_size=5000
 chunk_overlap=300
+SUPPORTED_FILE_TYPES = ['.pdf']
+BATCH_SIZE = 100 
 
 
 WATCH_DIRECTORY = "./rag/data"
@@ -47,5 +49,15 @@ ERROR_CODES = {
         "code": "R003",
         "message": "An internal error occurred while processing the request.",
         "details": "Generic error message - details will be populated at runtime"
+    },
+    "C001": {
+        "code": "C001",
+        "message": "Non-PDF file skipped",
+        "details": "File type not supported"
+    },
+    "C002": {
+        "code": "C002",
+        "message": "Internal processing error",
+        "details": "Error during document processing"
     }
 }

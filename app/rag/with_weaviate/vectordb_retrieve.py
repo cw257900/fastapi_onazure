@@ -35,7 +35,6 @@ def create_error_response(error_code: str, custom_details: str = None) -> dict:
         error["details"] = custom_details
 
     logging.error(json.dumps(error, indent=4))
-
     return {"error": error}
 
 def get_client():
@@ -73,7 +72,7 @@ def query(query_text: str, class_name: str = class_name, limit: int = 5) -> dict
             pass
         else:      
             response = collection.query.hybrid(
-                query=query,
+                query=query_text,
                 alpha=0.75,
                 limit=5,
                 return_metadata=MetadataQuery(score=True, explain_score=True),

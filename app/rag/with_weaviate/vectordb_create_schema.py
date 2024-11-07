@@ -121,11 +121,7 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
                     wvc.config.Property(
                         name="source",
                         data_type=wvc.config.DataType.TEXT,
-                    ),
-                    wvc.config.Property(
-                        name="uploadDate",
-                        data_type=wvc.config.DataType.DATE,
-                    ),
+                    )
                 ],
                 # Configure the vector index
                 vector_index_config=wvc.config.Configure.VectorIndex.hnsw(  # Or `flat` or `dynamic`
@@ -142,12 +138,17 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
         )
         
     except Exception as e:
-        traceback.print_exc()
-        logging.error(json.dumps(e, indent=4))
+        
+        logging.error("Error occurred", exc_info=True)
+
+        # Or if you want to include a specific message:
+        logging.error(f"Failed to process file {class_name}", exc_info=True)
         raise
 
     finally:
-        logging.info(f" === create_schema.py === : {class_name} created ")
+        
+        print (" === create_schema.py completed *************")
+
         pass
         # client.close() don't close client 
 
