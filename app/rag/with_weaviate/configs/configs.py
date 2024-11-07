@@ -18,6 +18,9 @@ WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
 WATCH_DIRECTORY = "./dev/rag/data"
 print (" configs.py - variable WATCH_DIRECTORY: ", WATCH_DIRECTORY )
 
+chunk_size=5000
+chunk_overlap=300
+
 base_path =os.getcwd()
 def find_data_folder(base_path, folder_name="data"): #find the path of "data" folder, as used to host pdf fils there 
     for root, dirs, files in os.walk(base_path):

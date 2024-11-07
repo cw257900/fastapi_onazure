@@ -79,7 +79,6 @@ def rag_retrieval (prompt, limit=2):
 
             idx =idx+1
            
-       
 
         print ( " === rag_weaviate.py returned query ojbect ", json.dumps(json_object, indent=4))
         print()

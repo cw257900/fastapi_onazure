@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 
-
 class PDFProcessor:
     def __init__(self, connection_string: str):
         """

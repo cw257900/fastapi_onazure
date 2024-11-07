@@ -108,11 +108,14 @@ async def upsert_embeddings_to_vector_store(pdf_file_path, vector_store,  class_
        vector_store.close_client(client)
 
 
+
+
+
+
 # weaviate v4 code
 # Uploading chunks to Weaviate, by default ebedding
 # if same file updated already, it will throw exception : Unexpected status code: 422, 
 # with response body: {'error': [{'message': "id '8a5c4432-9a82-5f98-b9dd-5ca80b77cd13' already exists"}]}
-
 async def upsert_chunks_to_store (pdf_file_path, 
                            client, 
                            class_name):
