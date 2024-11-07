@@ -7,7 +7,7 @@ import weaviate
 import warnings
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
-s#ys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 #import with_weaviate.vectordb_retrieve as retrive 
 #import with_weaviate.vectordb_create as create 
 #from with_weaviate.vector_stores import vector_stores  as vectore_store
@@ -54,6 +54,7 @@ def rag_retrieval (prompt, limit=2):
     if isinstance(hybrid_rlt, dict):
         if 'error' in hybrid_rlt:
             json_list = hybrid_rlt
+            return hybrid_rlt
 
     else:
         idx =0
@@ -78,9 +79,10 @@ def rag_retrieval (prompt, limit=2):
             idx =idx+1
            
             
-    print ( indexed_object)
-    print()
-    return indexed_object
+        print ( indexed_object)
+        print()
+
+        return indexed_object
     
 if __name__ =="__main__" :
     prompt = "sumerize the insurance document"

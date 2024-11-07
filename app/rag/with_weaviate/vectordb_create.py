@@ -1,6 +1,6 @@
 import os
 import json
-import datetime
+from datetime import datetime
 import asyncio
 import sys
 import traceback 
@@ -159,7 +159,8 @@ async def upsert_chunks_to_store (pdf_file_path,
                     data_object = {
                         "page_content": doc.page_content,  # Add doc content as metadata
                         "page_number": page_number,        # Add page number as metadata
-                        "source": file_path               # Add file path as metadata
+                        "source": file_path,               # Add file path as metadata
+                        "uploadDate": datetime.now().isoformat()  # e.g., '2023-11-05T15:30:00'
                     }
 
                     # Insert the object along with its vector into Weaviate
@@ -209,26 +210,12 @@ async def upsert_chunks_to_store (pdf_file_path,
 
 
 
-async def main ():
-    
+async def main ():   
     pdf_file_path=configs.pdf_file_path
     client = vector_store.create_client()
-
-    print(pdf_file_path)
-    print(class_name)
-    print()
-
-    # Use asyncio.run to run the async function
-    # asyncio.run(upsert_embeddings_to_vector_store(pdf_file_path, vector_store=vector_store, class_name=class_name))
     status = await upsert_chunks_to_store(pdf_file_path, 
                            client,  
                            class_name=class_name)
-    print()
-    print (status)
-    print(pdf_file_path)
-    print(class_name)
-    print()
-   
 
 # Entry point
 if __name__ == "__main__":
