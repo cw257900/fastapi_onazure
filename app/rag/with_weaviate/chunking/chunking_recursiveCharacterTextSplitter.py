@@ -29,8 +29,8 @@ def get_chunked_doc(pdf_file_path):
 
         # Define the text splitter
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=5000,
-            chunk_overlap=300,
+            chunk_size=configs.chunk_size,
+            chunk_overlap=configs.chunk_overlap,
             length_function=len,
             separators=["\n\n", "\n", ".", "?", "!"]
         )

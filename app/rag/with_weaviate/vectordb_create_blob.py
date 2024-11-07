@@ -12,12 +12,15 @@ from langchain_community.document_loaders import PyPDFLoader
 import tempfile
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import logging
+import vectordb_create as create
 
 
 # Add the parent directory (or wherever "with_pinecone" is located) to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from vector_stores import vector_stores as vector_store
+
 from configs import configs
+class_name = configs.class_name
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -26,6 +29,8 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
 
 
 class PDFProcessor:
@@ -50,23 +55,25 @@ class PDFProcessor:
                 temp_pdf.write(blob_data)
                 temp_pdf_path = temp_pdf.name
                 print ("temp file path ", temp_pdf_path)
-                print (temp_pdf)
 
+            create.upsert_chunks_to_store (temp_pdf_path, client = vector_store.create_client() , class_name=class_name)
+
+            """
             # Load the PDF using PyPDFLoader
             loader = PyPDFLoader(temp_pdf_path)
             pages = loader.load()
 
             # Process or print the text from each page
             for page in pages:
-                print(page.page_content)
+                #print(page.page_content)
+                None
+            """
 
             # Clean up the temporary file after processing
             os.remove(temp_pdf_path)
             
         except Exception as e:
             print(f"An error occurred: {e}")
-    
-            # Print the full stack trace
             traceback.print_exc()
             raise
 

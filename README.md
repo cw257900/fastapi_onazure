@@ -15,6 +15,9 @@ pip install llama-index-embeddings-openai #(need openai key)
 pip install llama-index-core llama-index-readers-file llama-index-llms-ollama 
 pip install llama-index-embeddings-huggingface #(local embedding to save cost)
 
+pip freeze > requirements.txt
+
+
 # test api locally without image and docker
 1. source .venv/bin/activate
 2. uvicorn app.main:app --port 8001 (default port is 8000)

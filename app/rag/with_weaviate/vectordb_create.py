@@ -122,23 +122,20 @@ async def upsert_chunks_to_store (pdf_file_path,
         "error": ['None']      # Initialize error as an empty list
     }
     error_json = []
-
-    print (" === *create.py client", client)
-    
-    client.connect()
+    print (" === *create.py pdf_file_path ", pdf_file_path)
 
     if not client.collections.exists(class_name):
         create_schema.create_collection(client, class_name)
-        print( " = create schema with class_name: ", class_name)
-    
+       
 
     try: 
+        client.connect()
         collection_name = client.collections.get(class_name)
     except:
         client.connect()
         print (" ==== *create.py reconnect client if needed === ")
 
-    print (" === *create.py pdf_file_path ", pdf_file_path)
+    
 
      # Iterate through all files in the specified directory
     for filename in os.listdir(pdf_file_path):
@@ -179,7 +176,7 @@ async def upsert_chunks_to_store (pdf_file_path,
             else: 
                 if not filename.startswith('.') : #ignore .DS_Store file
                     response["error"].append({
-                        "code": "0001",
+                        "code": "C001",
                         "message": f"Warning: Skipping non-PDF file: {file_path}",
                         "details": f"Warning: Skipping non-PDF file: {file_path}"
                     })
@@ -196,19 +193,15 @@ async def upsert_chunks_to_store (pdf_file_path,
             """
             response["status"] = False
             response["error"].append({
-                "code": "1002",
+                "code": "C002",
                 "message": "An internal error occurred while processing the request.",
                 "details": str(e)
             })
           
-            
-
  
     # The Python client uses standard HTTP requests, which are automatically closed after the response is received.
     vector_store.close_client(client)
-    print()
-    print (" === create object ", response)
-    print()
+    
     return response 
  
 

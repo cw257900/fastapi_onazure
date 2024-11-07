@@ -45,10 +45,10 @@ async def rag_upload ():
 def rag_retrieval (prompt, limit=2):
 
     json_list = []
-    print (" === rag_retrieval that rag asking ", prompt)
+    print (" === rag_weaviate.py retrieval that rag asking ", prompt)
     hybrid_rlt = retrive.query(prompt,  limit=limit)
 
-    print (f" === rag_retrieval that rag answer hybrid_rlt with {limit}", hybrid_rlt)
+    print (f" === rag_weaviate.py retrieval that rag answer hybrid_rlt with {limit}", hybrid_rlt)
     print (hybrid_rlt)
   
     if isinstance(hybrid_rlt, dict):
@@ -70,6 +70,7 @@ def rag_retrieval (prompt, limit=2):
                 "page_content": o.properties.get("page_content"),
                 "page_number": o.properties.get("page_number"),
                 "source": o.properties.get("source"),
+                "uploadDate": o.properties.get("uploadDate").isoformat(), #covert date to json comparable ISO 8601 string
                 "score": o.metadata.score,
                 "explain_score": str(o.metadata.explain_score).replace("\n", "")
             }
@@ -78,8 +79,9 @@ def rag_retrieval (prompt, limit=2):
 
             idx =idx+1
            
-            
-        print ( indexed_object)
+       
+
+        print ( " === rag_weaviate.py returned query ojbect ", json.dumps(json_object, indent=4))
         print()
 
         return indexed_object

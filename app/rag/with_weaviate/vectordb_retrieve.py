@@ -27,8 +27,7 @@ vector_store = vector_store
 pdf_file_path = configs.pdf_file_path
 class_name =configs.class_name
 class_description =configs.WEAVIATE_STORE_DESCRIPTION
-OPENAI_API_KEY = configs.OPENAI_API_KEY
-os.environ['OPENAI_API_KEY']=OPENAI_API_KEY
+os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
 
 
 
@@ -41,7 +40,7 @@ def query (query,   class_name = class_name, limit = 5):
             client = vector_store.create_client()
             print (" ==== retrive.py, using embeded client")
         except:
-            client = weaviate.connect_to_local( headers = {"X-OpenAI-Api-Key": OPENAI_API_KEY})
+            client = weaviate.connect_to_local( headers = {"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
            
 
 
@@ -51,7 +50,7 @@ def query (query,   class_name = class_name, limit = 5):
         if not client.collections.exists(class_name):
             error_json = {
                 "error": {
-                    "code": 1001,
+                    "code": "R001",
                     "message": "Collection is not in system",
                     "details": "Ensure vector store created and have data uploaded."
                 }
@@ -76,7 +75,7 @@ def query (query,   class_name = class_name, limit = 5):
             if (utils.get_total_object_count(client) == 0):
                 error_json = {
                     "error": {
-                        "code": 1002,
+                        "code": "R002",
                         "message": "Vector Collection is created, but has no data yet",
                         "details": "Vector Collection is created, but has no data yet"
                     }
@@ -99,7 +98,7 @@ def query (query,   class_name = class_name, limit = 5):
             """
             error_json = {
                 "error": {
-                    "code": 500,
+                    "code": "R003",
                     "message": "An internal error occurred while processing the request.",
                     "details": str(e)
                 }
