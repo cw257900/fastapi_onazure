@@ -1,4 +1,5 @@
 import os
+import json
 import weaviate.classes as wvc
 import weaviate
 import sys
@@ -17,7 +18,13 @@ import warnings
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
 import logging
-logging.basicConfig(level=logging.ERROR)
+
+logging.basicConfig(
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        level=logging.INFO,
+        force=True
+    )
+
 
 # Set API keys and Weaviate URL from environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -34,7 +41,7 @@ class_description = configs.WEAVIATE_STORE_DESCRIPTION
 def create_schema_multi_model (client, class_name, class_description=None) :
 
     if utils.check_collection_exists(client, class_name):
-        print(f"Collection '{class_name}' already exists.")
+        logging.info(f"Collection '{class_name}' already exists.")
         return
 
     try:
@@ -65,7 +72,7 @@ def create_schema_multi_model (client, class_name, class_description=None) :
     
     except Exception as e:
         print(f"Error: {e}")
-        #traceback.print_exc()
+        traceback.print_exc()
 
     finally:
         
@@ -84,12 +91,15 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
     vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_openai( model=text2vec_model)  
     vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_transformers( ) 
     """
+
+
     #client = vector_store.create_client()
     if utils.check_collection_exists(client, class_name):
-        print(f"Collection '{class_name}' already exists.")
+        logging.info(f" === create_schema.py Collection '{class_name}' already exists.")
         return
 
     try:
+       
         collection = client.collections.create( #this is v4 weaviate
             name=class_name,
             description=class_description,
@@ -130,17 +140,14 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
                 index_timestamps=True,
             ),
         )
-
-        print (f" === create_schema.py === : {class_name} created ")
-        print ()
-       
         
     except Exception as e:
-        print(f"Error: {e}")
         traceback.print_exc()
+        logging.error(json.dumps(e, indent=4))
         raise
 
     finally:
+        logging.info(f" === create_schema.py === : {class_name} created ")
         pass
         # client.close() don't close client 
 
@@ -157,7 +164,7 @@ if __name__ == "__main__":
         print (client.is_connected)
         client.connect()
 
-    #without vector, use outside ; default vector = None 
     create_collection(client, class_name=class_name,class_description=class_description)
+        
 
 

@@ -15,11 +15,13 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")  # Weaviate API key
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
 
-WATCH_DIRECTORY = "./dev/rag/data"
-print (" configs.py - variable WATCH_DIRECTORY: ", WATCH_DIRECTORY )
-
 chunk_size=5000
 chunk_overlap=300
+
+
+WATCH_DIRECTORY = "./rag/data"
+print (" configs.py - variable WATCH_DIRECTORY: ", WATCH_DIRECTORY )
+
 
 base_path =os.getcwd()
 def find_data_folder(base_path, folder_name="data"): #find the path of "data" folder, as used to host pdf fils there 
@@ -29,3 +31,21 @@ def find_data_folder(base_path, folder_name="data"): #find the path of "data" fo
 pdf_file_path = find_data_folder (base_path, "data") #this variable = None, means it couldn't fine "data" folder
 
 print (" configs.py - variable pdf_file_path: ", pdf_file_path )
+
+ERROR_CODES = {
+    "R001": {
+        "code": "R001",
+        "message": "Collection is not in system",
+        "details": "Ensure vector store created and have data uploaded."
+    },
+    "R002": {
+        "code": "R002",
+        "message": "Vector Collection is created, but has no data yet",
+        "details": "Vector Collection is created, but has no data yet"
+    },
+    "R003": {
+        "code": "R003",
+        "message": "An internal error occurred while processing the request.",
+        "details": "Generic error message - details will be populated at runtime"
+    }
+}

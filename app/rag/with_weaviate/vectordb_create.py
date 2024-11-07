@@ -19,10 +19,13 @@ from langchain_huggingface import HuggingFaceEmbeddings
 import  vectordb_create_schema as create_schema
 import logging 
 
-# Configure logging
+# Configure logging for development
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.WARNING  # You can change this to DEBUG, WARNING, etc., as needed
+    level=logging.INFO,  # Changed from WARNING to INFO
+    handlers=[
+        logging.StreamHandler()  # This ensures output to console
+    ]
 )
 
 
