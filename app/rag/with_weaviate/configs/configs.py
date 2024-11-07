@@ -18,6 +18,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")  # Weaviate API key
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
 
+
 class_name = "PDF_COLLECTION"
 
 base_path =os.getcwd()
@@ -29,5 +30,4 @@ def find_data_folder(base_path, folder_name="data"):
 
 pdf_file_path = find_data_folder (base_path, "data")
 
-print (" ******* base path", base_path)
-print (pdf_file_path )
+print (" configs.py: ", pdf_file_path )

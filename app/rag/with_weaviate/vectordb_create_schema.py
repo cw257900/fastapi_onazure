@@ -111,6 +111,10 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
                     name="source",
                     data_type=wvc.config.DataType.TEXT,
                 )
+                wvc.config.Property(
+                    name="uploadDate",
+                    data_type=wvc.config.DataType.DATE,
+                )
             ],
             # Configure the vector index
             vector_index_config=wvc.config.Configure.VectorIndex.hnsw(  # Or `flat` or `dynamic`
