@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import json
 import traceback
 from typing import Optional
 from azure.storage.blob import BlobServiceClient
@@ -13,7 +14,7 @@ import tempfile
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import vectordb_create as create
-
+import asyncio  # Add this import
 
 # Add the parent directory (or wherever "with_pinecone" is located) to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -26,10 +27,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import warnings
+warnings.filterwarnings("ignore", category=ResourceWarning)
 
+import logging
+
+logging.basicConfig(
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        level=logging.INFO,
+        force=True
+    )
 
 
 class PDFProcessor:
@@ -39,43 +46,46 @@ class PDFProcessor:
         """
         self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
 
-    def read_pdf_from_blob (self , container_name="sacontainer", blob_name: str = "dev/rag/data/constitution.pdf" ):
+    async def read_pdf_from_blob(self, container_name="sacontainer", blob_name: str = configs.blob_name):
+        temp_pdf_path = None
         try: 
+            logging.info(f"=== Processing blob: {blob_name}")
+
             container_client = self.blob_service_client.get_container_client(container_name)
-            
-            # Get blob client
             blob_client = container_client.get_blob_client(blob_name)
-            
-            # Download the PDF blob as binary data
             blob_data = blob_client.download_blob().readall()       
 
-            # Save the PDF to a temporary file to be used with PyPDFLoader
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
                 temp_pdf.write(blob_data)
                 temp_pdf_path = temp_pdf.name
-                print ("temp file path ", temp_pdf_path)
+                logging.info(f"Temporary PDF saved to: {temp_pdf_path}")
 
-            create.upsert_chunks_to_store (temp_pdf_path, client = vector_store.create_client() , class_name=class_name)
-
-            """
-            # Load the PDF using PyPDFLoader
-            loader = PyPDFLoader(temp_pdf_path)
-            pages = loader.load()
-
-            # Process or print the text from each page
-            for page in pages:
-                #print(page.page_content)
-                None
-            """
-
-            # Clean up the temporary file after processing
-            os.remove(temp_pdf_path)
-            
+            response = await create.upsert_single_file_to_store(
+                temp_pdf_path, 
+                client=vector_store.create_client(), 
+                class_name=class_name
+            )
+            logging.info(f" === class_name: {class_name}")
+            logging.info("\nProcessing Response:\n%s", json.dumps(response, indent=2))
+                
         except Exception as e:
-            print(f"An error occurred: {e}")
-            traceback.print_exc()
+            logging.error(
+                "Blob processing error",
+                extra={
+                    "error_type": type(e).__name__,
+                    "error_message": str(e)
+                },
+                exc_info=True
+            )
             raise
-
+        finally:
+            logging.info(f"=== Processing blob is loaded: {blob_name}")
+            if temp_pdf_path and os.path.exists(temp_pdf_path):
+                try:
+                    os.remove(temp_pdf_path)
+                    logging.info(f"Temporary file removed: {temp_pdf_path}")
+                except Exception as cleanup_error:
+                    logging.warning(f"Failed to remove temporary file: {cleanup_error}")
 
 def main():
     AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
@@ -83,7 +93,7 @@ def main():
 
     # Initialize processor
     processor = PDFProcessor(AZURE_STORAGE_CONNECTION_STRING)
-    processor.read_pdf_from_blob()
+    asyncio.run(processor.read_pdf_from_blob())
 
 if __name__ == "__main__":
     main()

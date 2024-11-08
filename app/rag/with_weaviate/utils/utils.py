@@ -1,6 +1,7 @@
 import weaviate
 import os
 import sys
+import json
 import weaviate
 from weaviate.classes.query import Filter
 from dotenv import load_dotenv
@@ -74,6 +75,8 @@ def get_total_object_count(client) -> int:
         # Construct the URL for the objects endpoint
         
         url = f"{client._connection.url}/v1/objects/"
+
+        print (" === url from utils.py: " ,url)
         
         # Make the GET request to get the total object count
         response = requests.get(url)
@@ -101,21 +104,45 @@ def delete_by_uuid (client, class_name, uuid) :
         uuid
     )
 
-    
 
+# Add a function to get collection stats
+def get_collection_stats(client, class_name: str) -> dict:
+    try:
+        collection = client.collections.get(class_name)
+        count = collection.aggregate.over_all().count()
+        
+        stats = {
+            "collection_name": class_name,
+            "object_count": count,
+            "exists": client.collections.exists(class_name),
+            "url": client.url
+        }
+        
+        logging.info("\nCollection Stats:\n%s", json.dumps(stats, indent=2))
+        return stats
+        
+    except Exception as e:
+        logging.error(f"Error getting collection stats: {str(e)}", exc_info=True)
+        return None
+    
+def get_client():
+    try:
+        return vector_store.create_client()
+    except Exception as e:
+        logging.warning(f"Failed to create embedded client: {e}")
+        return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
+    
 def main():
     print ()
     print ("weaviate version:", weaviate.__version__)
-    print ("weaviate url:", configs.WEAVIATE_URL)
-
-
-    client = vector_store.create_client()
+  
+    client = get_client()
 
     #collection = client.collections.get(class_name)
     delete_objects(client, configs.class_name)
     print ()
-    print (" === class name: " , configs.class_name)
-    print (" === collection existing: ", check_collection_exists (client, configs.class_name) )
+    #print (" === class name: " , configs.class_name)
+    #print (" === collection existing: ", check_collection_exists (client, configs.class_name) )
     print (" === total counts of objects: ", get_total_object_count(client))
 
 

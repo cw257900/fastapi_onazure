@@ -122,7 +122,77 @@ async def get_weaviate_client():
     finally:
         vector_store.close_client(client)
 
+async def upsert_single_file_to_store(
+    pdf_path: str,
+    client: weaviate.Client,
+    class_name: str) -> dict:
+    
+    response = {
+        "status": True,
+        "error": ['None']
+    }
 
+    try:
+        if not client.collections.exists(class_name):
+            create_schema.create_collection(client, class_name)
+        
+        collection_name = client.collections.get(class_name)
+        
+        # Process single PDF file
+        if pdf_path.lower().endswith('.pdf'):
+            logging.info(f"Processing PDF file: {pdf_path}")
+            docs = chunking_recursiveCharacterTextSplitter.get_chunked_doc(pdf_path)
+            
+            for idx, doc in enumerate(docs):
+                page_number = doc.metadata.get('page', idx + 1)
+                
+                data_object = {
+                    "page_content": doc.page_content,
+                    "page_number": page_number,
+                    "source": pdf_path,
+                    "uploadDate": datetime.now(timezone.utc).isoformat()
+                }
+
+                try:
+                    collection_name.data.insert(
+                        properties=data_object,
+                        uuid=generate_uuid5(data_object),
+                    )
+                    logging.info(f"Inserted chunk {idx} from page {page_number}")
+                except Exception as insert_error:
+                    logging.error(f"Error inserting chunk: {str(insert_error)}")
+                    response["status"] = False
+                    response["error"].append({
+                        "code": "C002",
+                        "message": "Failed to insert chunk",
+                        "details": str(insert_error)
+                    })
+
+    except Exception as e:
+        logging.error(
+            "Error processing document",
+            extra={
+                "error_type": type(e).__name__,
+                "error_message": str(e)
+            },
+            exc_info=True
+        )
+        response["status"] = False
+        response["error"].append({
+            "code": "C001",
+            "message": "Document processing failed",
+            "details": str(e)
+        })
+    
+    finally:
+        url = f"{client._connection.url}/v1/objects/"
+        object_count = utils.get_total_object_count(client)
+        logging.info(f" === url: from upsert_single_file_to_store.py {url}")
+        logging.info(f" === object_count: {object_count}")
+        pass
+        #vector_store.close_client(client)
+    
+    return response
 
 
 # weaviate v4 code

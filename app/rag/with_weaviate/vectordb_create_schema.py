@@ -147,7 +147,7 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
 
     finally:
         
-        print (" === create_schema.py completed *************")
+        print (" === create_schema.py completed")
 
         pass
         # client.close() don't close client 

@@ -32,7 +32,7 @@ def create_client():
     client = weaviate.use_async_with_embedded (
         version="1.26.1",
         headers={"X-OpenAI-Api-Key": OPENAI_API_KEY},
-        port=8081,
+        port=8079,
         grpc_port=50051,
     )
     """
