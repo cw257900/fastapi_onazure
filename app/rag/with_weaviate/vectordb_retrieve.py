@@ -96,8 +96,9 @@ def query(query_text: str, class_name: str = class_name, limit: int = 5) -> dict
             """
             return create_error_response("R003", custom_details=str(e))
 
-    #finally: 
-        # None
+    finally: 
+        logging.info(f" === url: {client._connection.url}")
+        logging.info(f" === object_count: {utils.get_total_object_count(client)}")
         #vector_store.close_client(client)
 
 
@@ -160,7 +161,7 @@ def retrieve_semantic_vector_search():
   
 def main():
     response = query ("constituation",   limit = 5)
-    print (response)
+    #print (response)
 
 # Call the main function
 if __name__ == "__main__":

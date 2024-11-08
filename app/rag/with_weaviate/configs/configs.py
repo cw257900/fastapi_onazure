@@ -21,9 +21,9 @@ SUPPORTED_FILE_TYPES = ['.pdf']
 BATCH_SIZE = 100 
 
 
-WATCH_DIRECTORY = "./rag/data"
+WATCH_DIRECTORY = "rag/data"
 print (" configs.py - variable WATCH_DIRECTORY: ", WATCH_DIRECTORY )
-
+blob_name = "rag/data/constitution.pdf"
 
 base_path =os.getcwd()
 def find_data_folder(base_path, folder_name="data"): #find the path of "data" folder, as used to host pdf fils there 

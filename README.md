@@ -24,7 +24,7 @@ pip freeze > requirements.txt
 3. http://localhost:8000 
 4. validate port and kill hanging process
 ps aux | grep weaviate
-lsof -i :8000 (show the process using the port, default port for embeded port=8081, grpc_port=50051)
+lsof -i :8000 (show the process using the port, default port for embeded port=8079, grpc_port=50051)
 kill -9 <pid>
 
 # create Dockerfile locally 
