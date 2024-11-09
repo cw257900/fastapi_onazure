@@ -140,7 +140,8 @@ async def upsert_single_file_to_store(
         
         # Process single PDF file
         if pdf_path.lower().endswith('.pdf'):
-            logging.info(f"Processing PDF file: {pdf_path}")
+
+            logging.info(f" === vectordb_create.py === Processing PDF file: {pdf_path}")
             docs = chunking_recursiveCharacterTextSplitter.get_chunked_doc(pdf_path)
             
             for idx, doc in enumerate(docs):
@@ -195,7 +196,7 @@ async def upsert_single_file_to_store(
     return response
 
 
-# weaviate v4 code
+# pdf_file_path in config points to local /data folder
 # Uploading chunks to Weaviate, by default ebedding
 # if same file updated already, it will throw exception : Unexpected status code: 422, 
 # with response body: {'error': [{'message': "id '8a5c4432-9a82-5f98-b9dd-5ca80b77cd13' already exists"}]}
@@ -227,10 +228,14 @@ async def upsert_chunks_to_store(
         try: 
             file_path = os.path.join(pdf_file_path, filename)
 
+            
+
             # Check if the current file is a PDF
             if os.path.isfile(file_path) and file_path.lower().endswith('.pdf') and  not filename.startswith('.') :
                 
-                #logging.info(f"Starting chunk insertion for: {file_path}")
+                logging.info(" === pdf_file_path === {}".format(pdf_file_path))
+                logging.info(" === filename === {}".format(filename))
+                logging.info(" === file_path === {}".format(file_path))
 
                 # This is a sentence-based chunker
                 docs =  chunking_recursiveCharacterTextSplitter.get_chunked_doc(file_path)
@@ -292,8 +297,6 @@ async def upsert_chunks_to_store(
     
     return response 
  
-
-
 
 async def main ():   
     pdf_file_path=configs.pdf_file_path

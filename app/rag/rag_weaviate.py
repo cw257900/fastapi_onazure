@@ -42,14 +42,17 @@ async def rag_upload ():
     return response 
 
 # Function to build index over data file
-def rag_retrieval (prompt, limit=2):
+def rag_retrieval (prompt, limit=3, alpha=0.75 ):
 
     json_list = []
     print (" === rag_weaviate.py retrieval that rag asking ", prompt)
     hybrid_rlt = retrive.query(prompt,  limit=limit)
 
-    print (f" === rag_weaviate.py retrieval that rag answer hybrid_rlt with {limit}", hybrid_rlt)
-    print (hybrid_rlt)
+    #print (f" === rag_weaviate.py retrieval that rag answer hybrid_rlt with {limit}", hybrid_rlt)
+    #print (hybrid_rlt)
+
+    print ()
+   
   
     if isinstance(hybrid_rlt, dict):
         if 'error' in hybrid_rlt:
@@ -61,10 +64,6 @@ def rag_retrieval (prompt, limit=2):
         for o in hybrid_rlt.objects:
 
             json_object =[]
-            print(f" === {idx} rag index ")
-            print(f" === {idx} rag page_content ", o.properties.get("page_content"))
-            print(f" === {idx} rag score ", o.metadata.score)
-            print(f" === {idx} rag explain_score ", o.metadata.explain_score)
             
             json_object = {
                 "page_content": o.properties.get("page_content"),
@@ -78,14 +77,16 @@ def rag_retrieval (prompt, limit=2):
             indexed_object = {"index": idx, "data": json_object}
 
             idx =idx+1
-           
+            print (idx)
+            print (json_object)
+            print ()
 
-        print ( " === rag_weaviate.py returned query ojbect ", json.dumps(json_object, indent=4))
+        #print ( " === rag_weaviate.py returned query ojbect ", json.dumps(json_object, indent=4))
         print()
 
         return indexed_object
     
 if __name__ =="__main__" :
     prompt = "sumerize the insurance document"
-    rag_retrieval("Sumarize Constitution", limit=2)
+    rag_retrieval("Summarize the 4th amendment in the constitution", limit=3, alpha=0.75)
     #rag_upload()

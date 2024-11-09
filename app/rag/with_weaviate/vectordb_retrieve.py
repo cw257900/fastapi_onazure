@@ -44,7 +44,7 @@ def get_client():
         logging.warning(f"Failed to create embedded client: {e}")
         return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
 
-def query(query_text: str, class_name: str = class_name, limit: int = 5) -> dict:
+def query(query_text: str, class_name: str = class_name, limit: int =2, alpha =0.75) -> dict:
     """
     Perform a hybrid search query on the vector database.
     
@@ -56,7 +56,9 @@ def query(query_text: str, class_name: str = class_name, limit: int = 5) -> dict
     Returns:
         dict: Search results or error response
     """
-    
+    print ( " === alpha " ,alpha)
+    print ()
+
     try: 
         
         error_json = None
@@ -73,8 +75,8 @@ def query(query_text: str, class_name: str = class_name, limit: int = 5) -> dict
         else:      
             response = collection.query.hybrid(
                 query=query_text,
-                alpha=0.75,
-                limit=5,
+                alpha=alpha,
+                limit=limit,
                 return_metadata=MetadataQuery(score=True, explain_score=True),
             )
             

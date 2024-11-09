@@ -9,12 +9,19 @@ from weaviate.exceptions import WeaviateBaseError
 import requests
 import inspect
 import logging
-logging.basicConfig(level=logging.ERROR)
+
+# Configure logging for development
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,  # Changed from WARNING to INFO
+    handlers=[
+        logging.StreamHandler()  # This ensures output to console
+    ]
+)
 
 import warnings
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
-os.environ["LOG_LEVEL"] = "ERROR"
 
 # Add the parent directory (or wherever "with_pinecone" is located) to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -26,7 +33,7 @@ def check_collection_exists(client, collection_name: str) -> bool:
     try:
         return client.collections.exists(collection_name)
     except Exception as e:
-        print(f"Error checking if collection exists: {e}")
+        logging.warning(f" *** utils.py - Error checking if collection exists: {e}")
         return False
 
 # Using context management if Weaviate client supports it
@@ -76,7 +83,7 @@ def get_total_object_count(client) -> int:
         
         url = f"{client._connection.url}/v1/objects/"
 
-        print (" === url from utils.py: " ,url)
+        logging.info (" === utils.py - url from get_total_object_count :{}".format(url))
         
         # Make the GET request to get the total object count
         response = requests.get(url)
@@ -88,14 +95,10 @@ def get_total_object_count(client) -> int:
         return total_count
     
     except requests.exceptions.RequestException as e:
-        print(f"Error while getting total object count: {e}")
+        logging.warning(f" *** utils.py - Error while getting total object counts: {e}")
         return 0
 
-# Delete all objects in the class without deleting the schema
-def delete_objects(client, class_name): 
-    # Delete all objects in the class without deleting the schema
-    result = client.collections.delete(class_name) 
-    print(result)
+
 
 def delete_by_uuid (client, class_name, uuid) :
 
@@ -129,27 +132,18 @@ def get_client():
     try:
         return vector_store.create_client()
     except Exception as e:
-        logging.warning(f"Failed to create embedded client: {e}")
+        logging.warning(f" utils.py - Failed to create embedded client: {e}")
         return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
     
 def main():
-    print ()
-    print ("weaviate version:", weaviate.__version__)
+   
+    logging.info (" === utils.py - weaviate version: {}".format(weaviate.__version__))
   
     client = get_client()
-
-    #collection = client.collections.get(class_name)
-    delete_objects(client, configs.class_name)
-    print ()
-    #print (" === class name: " , configs.class_name)
-    #print (" === collection existing: ", check_collection_exists (client, configs.class_name) )
-    print (" === total counts of objects: ", get_total_object_count(client))
-
-
-    print()
-  
-   
+    count = get_total_object_count(client)
+    
+    logging.info (" === utils.py - total counts of objects: {}".format(count))
+ 
 
 if __name__ == "__main__":
-
     main()

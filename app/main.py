@@ -37,8 +37,8 @@ async def upload_data():
 @app.get("/query/{ask}")
 async def retrive_json (ask:str):
 
-    indexed_object= rag_weaviate.rag_retrieval( ask, limit =5 )
-    #json_list = await run_in_threadpool(rag_weaviate.rag_retrieval, ask, limit =2)
+    indexed_object= rag_weaviate.rag_retrieval( ask, limit =2 )
+   
 
     print ( " ****** main.py *****  ", indexed_object)
     return indexed_object 

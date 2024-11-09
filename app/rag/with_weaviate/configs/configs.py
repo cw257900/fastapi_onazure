@@ -1,9 +1,18 @@
 
 import os
 import sys
-
+import logging
 from dotenv import load_dotenv
 load_dotenv()
+
+# Configure logging for development
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,  # Changed from WARNING to INFO
+    handlers=[
+        logging.StreamHandler()  # This ensures output to console
+    ]
+)
 
 WEAVIATE_STORE_NAME="PDF_COLLECTION"
 class_name = "PDF_COLLECTION"
@@ -24,6 +33,9 @@ BATCH_SIZE = 100
 WATCH_DIRECTORY = "rag/data"
 print (" configs.py - variable WATCH_DIRECTORY: ", WATCH_DIRECTORY )
 blob_name = "rag/data/constitution.pdf"
+logging.info (" === configs.py - variable blob_name used for azure: {}".format(blob_name))
+
+
 
 base_path =os.getcwd()
 def find_data_folder(base_path, folder_name="data"): #find the path of "data" folder, as used to host pdf fils there 
@@ -31,8 +43,7 @@ def find_data_folder(base_path, folder_name="data"): #find the path of "data" fo
         if folder_name in dirs:
             return os.path.join(root, folder_name)
 pdf_file_path = find_data_folder (base_path, "data") #this variable = None, means it couldn't fine "data" folder
-
-print (" configs.py - variable pdf_file_path: ", pdf_file_path )
+logging.info (" === configs.py - variable pdf_file_path used for local file under /data : {}".format(pdf_file_path))
 
 ERROR_CODES = {
     "R001": {
