@@ -32,7 +32,7 @@ BATCH_SIZE = 100
 
 WATCH_DIRECTORY = "rag/data"
 print (" configs.py - variable WATCH_DIRECTORY: ", WATCH_DIRECTORY )
-blob_name = "rag/data/constitution.pdf"
+blob_name = "rag/data"
 logging.info (" === configs.py - variable blob_name used for azure: {}".format(blob_name))
 
 
@@ -42,7 +42,10 @@ def find_data_folder(base_path, folder_name="data"): #find the path of "data" fo
     for root, dirs, files in os.walk(base_path):
         if folder_name in dirs:
             return os.path.join(root, folder_name)
+        
+
 pdf_file_path = find_data_folder (base_path, "data") #this variable = None, means it couldn't fine "data" folder
+
 logging.info (" === configs.py - variable pdf_file_path used for local file under /data : {}".format(pdf_file_path))
 
 ERROR_CODES = {

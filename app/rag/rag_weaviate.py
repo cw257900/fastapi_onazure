@@ -12,12 +12,15 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 #import with_weaviate.vectordb_create as create 
 #from with_weaviate.vector_stores import vector_stores  as vectore_store
 
-
-# Configure logging
+# Configure logging for development
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.WARNING  # You can change this to DEBUG, WARNING, etc., as needed
+    level=logging.INFO,  # Changed from WARNING to INFO
+    handlers=[
+        logging.StreamHandler()  # This ensures output to console
+    ]
 )
+
 
 
 # Add the parent directory to the Python path
@@ -45,11 +48,8 @@ async def rag_upload ():
 def rag_retrieval (prompt, limit=3, alpha=0.75 ):
 
     json_list = []
-    print (" === rag_weaviate.py retrieval that rag asking ", prompt)
+    logging.info (" === rag_weaviate.py retrieval that rag asking {}".format(prompt))
     hybrid_rlt = retrive.query(prompt,  limit=limit)
-
-    #print (f" === rag_weaviate.py retrieval that rag answer hybrid_rlt with {limit}", hybrid_rlt)
-    #print (hybrid_rlt)
 
     print ()
    
@@ -88,5 +88,5 @@ def rag_retrieval (prompt, limit=3, alpha=0.75 ):
     
 if __name__ =="__main__" :
     prompt = "sumerize the insurance document"
-    rag_retrieval("Summarize the 4th amendment in the constitution", limit=3, alpha=0.75)
+    rag_retrieval("What is a Constitution? Principles and Concepts", limit=3, alpha=0.75)
     #rag_upload()

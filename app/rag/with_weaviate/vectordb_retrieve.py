@@ -56,8 +56,8 @@ def query(query_text: str, class_name: str = class_name, limit: int =2, alpha =0
     Returns:
         dict: Search results or error response
     """
-    print ( " === alpha " ,alpha)
-    print ()
+    logging.info(f" === *retrieve.py - alpha {alpha}")
+    logging.info(f" === *retrieve.py - limit {limit}")
 
     try: 
         
@@ -148,9 +148,8 @@ def retrieve_semantic_vector_search():
 
     # provide summary of constitution
 
-    hybrid_rlt =  query (ask=question, limit=1)
+    hybrid_rlt =  query (ask=question, limit=3)
 
-    print("\nResults for hybrid search:")
     for o in hybrid_rlt.objects:
        
         print(json.dumps(o.properties, indent=4))
@@ -162,8 +161,28 @@ def retrieve_semantic_vector_search():
 
   
 def main():
-    response = query ("constituation",   limit = 5)
-    #print (response)
+    response = query ("sumerize constitution",   limit =2)
+    idx =0
+    for o in response.objects:
+
+            json_object =[]
+            
+            json_object = {
+                "page_content": o.properties.get("page_content"),
+                "page_number": o.properties.get("page_number"),
+                "source": o.properties.get("source"),
+                #"uploadDate": o.properties.get("uploadDate").isoformat(), #covert date to json comparable ISO 8601 string. 
+                "score": o.metadata.score,
+                "explain_score": str(o.metadata.explain_score).replace("\n", "")
+            }
+        
+            indexed_object = {"index": idx, "data": json_object}
+
+            idx =idx+1
+            logging.info (f" === *retrieve.py main index {idx}")
+            logging.info (f" === *retrieve.py main json_object {json_object}")
+            logging.info (" === *retrieve.py end")
+
 
 # Call the main function
 if __name__ == "__main__":

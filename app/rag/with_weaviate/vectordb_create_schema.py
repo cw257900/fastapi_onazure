@@ -95,7 +95,7 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
 
     #client = vector_store.create_client()
     if utils.check_collection_exists(client, class_name):
-        logging.info(f" === create_schema.py Collection '{class_name}' already exists.")
+        logging.info(f" === *schema.py - Collection '{class_name}' already exists.")
         return
 
     try:
@@ -137,25 +137,18 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
             ),
         )
         
-    except Exception as e:
-        
-        logging.error("Error occurred", exc_info=True)
-
+    except Exception as e:       
+        logging.error(" *** *retrieve.py - Error occurred", exc_info=True)
         # Or if you want to include a specific message:
-        logging.error(f"Failed to process file {class_name}", exc_info=True)
+        logging.error(f" *** *retrieve.py - Failed to process file {class_name}", exc_info=True)
         raise
 
-    finally:
+    finally:   
         
-        print (" === create_schema.py completed")
-
         pass
         # client.close() don't close client 
 
 
-
-
-   
 # Example usage
 if __name__ == "__main__":
 
@@ -166,6 +159,6 @@ if __name__ == "__main__":
         client.connect()
 
     create_collection(client, class_name=class_name,class_description=class_description)
-        
+    logging.info (f" === *schema.py - end of main {class_name} ")
 
 

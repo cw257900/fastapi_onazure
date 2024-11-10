@@ -9,6 +9,7 @@ from weaviate.exceptions import WeaviateBaseError
 import requests
 import inspect
 import logging
+from collections import Counter
 
 # Configure logging for development
 logging.basicConfig(
@@ -27,6 +28,9 @@ warnings.filterwarnings("ignore", category=ResourceWarning)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import vector_stores.vector_stores as vector_store
 import configs.configs as configs
+
+pdf_file_path = configs.pdf_file_path
+class_name = configs.class_name
 
 # Function to check if a collection (class) exists
 def check_collection_exists(client, collection_name: str) -> bool:
@@ -67,37 +71,49 @@ def reflect_weaviate_client(client):
     for name, method in inspect.getmembers(client.batch, predicate=inspect.isfunction):
         print(f"Method: {name}, Callable: {method}")
 
+def get_all_filenames(pdf_file_path):
+    all_files = []
+    for dirpath, dirnames, filenames in os.walk(pdf_file_path):
+        for filename in filenames:
+            if not filename.startswith('.'):  # Exclude files that start with a dot
+                all_files.append(os.path.join(dirpath, filename))
 
-def get_total_object_count(client) -> int:
+    #logging.info(f"\n utils.py -- all files \n {json.dumps(all_files, indent=2)}")
+    return all_files
+
+def get_total_object_count (client):
+    collection = client.collections.get(class_name)
+    response = collection.query.fetch_objects()
+    object_cnts = len(response.objects)
+
     """
-    Get the total count of objects in the Weaviate instance.
-
-    Args:
-        client: Weaviate client instance (to get the base URL).
-
-    Returns:
-        int: The total count of objects, or 0 if an error occurs.
+    i=0
+    for o in response.objects:
+        i = i+1
+        print(i)
+        print(o.properties.get("source"), o.properties.get("page_number"))
     """
-    try:
-        # Construct the URL for the objects endpoint
-        
-        url = f"{client._connection.url}/v1/objects/"
 
-        logging.info (" === utils.py - url from get_total_object_count :{}".format(url))
+    file_counts = Counter()
+    all_files= get_all_filenames(pdf_file_path)
+    for filename in all_files:
+        count = sum(1 for o in response.objects if o.properties.get("source") == filename)
+        file_counts[filename] = count
         
-        # Make the GET request to get the total object count
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an error for non-200 status codes
-        
-        # Extract the total count from the JSON response
-        data = response.json()
-        total_count = data.get("totalResults", 0)
-        return total_count
+    logging.info(f" === utils.py counts per file \n {json.dumps(file_counts, indent=2)}")
+
+    # Define the path to save the JSON file
+    output_file_path = "temp.txt"  # Update with your desired path
+
+    with open(output_file_path, "w") as f:
+        for i, o in enumerate(response.objects, start=1):
+            f.write(f"Object {i} properties:\n")
+            # Access only the properties dictionary of each object
+            for key, value in o.properties.items():
+                f.write(f"  {key}: {value}\n")
+            f.write("\n")  # Separate objects by a newline
     
-    except requests.exceptions.RequestException as e:
-        logging.warning(f" *** utils.py - Error while getting total object counts: {e}")
-        return 0
-
+    return file_counts
 
 
 def delete_by_uuid (client, class_name, uuid) :
@@ -112,17 +128,12 @@ def delete_by_uuid (client, class_name, uuid) :
 def get_collection_stats(client, class_name: str) -> dict:
     try:
         collection = client.collections.get(class_name)
-        count = collection.aggregate.over_all().count()
+
         
-        stats = {
-            "collection_name": class_name,
-            "object_count": count,
-            "exists": client.collections.exists(class_name),
-            "url": client.url
-        }
         
-        logging.info("\nCollection Stats:\n%s", json.dumps(stats, indent=2))
-        return stats
+        
+        
+        
         
     except Exception as e:
         logging.error(f"Error getting collection stats: {str(e)}", exc_info=True)
@@ -137,13 +148,10 @@ def get_client():
     
 def main():
    
-    logging.info (" === utils.py - weaviate version: {}".format(weaviate.__version__))
-  
     client = get_client()
-    count = get_total_object_count(client)
-    
-    logging.info (" === utils.py - total counts of objects: {}".format(count))
- 
+    get_total_object_count(client)
+   
+   
 
 if __name__ == "__main__":
     main()
