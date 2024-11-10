@@ -49,7 +49,7 @@ pdf_file_path = find_data_folder (base_path, "data") #this variable = None, mean
 logging.info (" === configs.py - variable pdf_file_path used for local file under /data : {}".format(pdf_file_path))
 
 ERROR_CODES = {
-    "R001": {
+    "R001": { #retrieve
         "code": "R001",
         "message": "Collection is not in system",
         "details": "Ensure vector store created and have data uploaded."
@@ -64,7 +64,7 @@ ERROR_CODES = {
         "message": "An internal error occurred while processing the request.",
         "details": "Generic error message - details will be populated at runtime"
     },
-    "C001": {
+    "C001": { #create
         "code": "C001",
         "message": "Non-PDF file skipped",
         "details": "File type not supported"
@@ -73,5 +73,10 @@ ERROR_CODES = {
         "code": "C002",
         "message": "Internal processing error",
         "details": "Error during document processing"
+    },
+    "D001": {
+        "code": "D001",
+        "message": "Internal processing error",
+        "details": "Error during cleanup"
     }
 }

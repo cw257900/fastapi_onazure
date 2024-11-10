@@ -40,6 +40,8 @@ logging.basicConfig(
     ]
 )
 
+AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
 
 class PDFProcessor:
     def __init__(self, connection_string: str):
@@ -48,7 +50,7 @@ class PDFProcessor:
         """
         self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
 
-    async def read_path_from_blob(self, container_name="sacontainer", blob_name: str = configs.blob_name):
+    async def upsert_chunks_to_store(self, container_name="sacontainer", blob_name: str = configs.blob_name):
         try: 
             logging.info(f" === *blob.py - Processing blobs under prefix: {blob_name}")
 
@@ -164,12 +166,9 @@ class PDFProcessor:
 
 def main():
 
-    AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-    AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
-
     # Initialize processor
-    processor = PDFProcessor(AZURE_STORAGE_CONNECTION_STRING)
-    asyncio.run(processor.read_path_from_blob())
+    processor = PDFProcessor()
+    asyncio.run(processor.upsert_chunks_to_store())
 
 if __name__ == "__main__":
     main()

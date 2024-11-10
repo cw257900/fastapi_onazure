@@ -29,15 +29,37 @@ from with_weaviate.configs import configs
 from with_weaviate.vector_stores import vector_stores as vector_store
 import with_weaviate.vectordb_create as create 
 import with_weaviate.vectordb_retrieve as retrive 
+from with_weaviate.utils import utils, vectordb_cleanup as cleanup
 
+class_name = configs.class_name
 
+async def rag_clean_data ():
+    response = {
+        "status": True,  # Initial status is set to True
+        #"error": ['None']      # Initialize error as an empty list
+        "error": []
+    }
+    try: 
+        client = utils.get_client()
+        cleanup.delete_objects(client, class_name)
+
+    except Exception as e:
+            
+            logging.warning(f" === rag_weaviate.py - rag_cleanup - Exception occurred: \n    {e}")  # Logs with stack trace
+            #traceback.print_exc() 
+
+            response["status"] = False
+            response["error"].append({
+                "code": "D001",
+                "message": f"An internal error occurred while cleanup {class_name}",
+                "details": str(e)
+            })
+    finally: 
+        return response
 
 async def rag_upload ():
-    try:
-        client = vector_store.create_client()
-    except:
-         client = weaviate.connect_to_local(port=8079, grpc_port=50050,  headers = {"X-OpenAI-Api-Key": configs.OPENAI_API_KEY}) #if embeded is not working, use local; actually should kill hanging embeded process if there are conflicts
-    
+    client = utils.get_client()
+        
     response = await create.upsert_chunks_to_store(configs.pdf_file_path,  client , configs.class_name) 
 
     logging.info(f"{configs.pdf_file_path} is updated to {configs.class_name} : response details: {response}")
@@ -49,42 +71,48 @@ def rag_retrieval (prompt, limit=3, alpha=0.75 ):
 
     json_list = []
     logging.info (" === rag_weaviate.py retrieval that rag asking {}".format(prompt))
-    hybrid_rlt = retrive.query(prompt,  limit=limit)
+    response = retrive.query(prompt,  limit=limit)
 
     print ()
    
   
-    if isinstance(hybrid_rlt, dict):
-        if 'error' in hybrid_rlt:
-            json_list = hybrid_rlt
-            return hybrid_rlt
+    if isinstance(response, dict):
+        if 'error' in response:
+            json_list = response
+            return response
 
     else:
-        idx =0
-        for o in hybrid_rlt.objects:
 
-            json_object =[]
+        # Initialize an empty list to hold all objects' properties
+        json_objects = []
+
+        for i, o in enumerate(response.objects, start=1):
+            # Extract properties into a dictionary dynamically
+            object_data = {key: value for key, value in o.properties.items()}
             
-            json_object = {
-                "page_content": o.properties.get("page_content"),
-                "page_number": o.properties.get("page_number"),
-                "source": o.properties.get("source"),
-                #"uploadDate": o.properties.get("uploadDate").isoformat(), #covert date to json comparable ISO 8601 string. 
-                "score": o.metadata.score,
-                "explain_score": str(o.metadata.explain_score).replace("\n", "")
-            }
+            # Optionally add an index or other metadata
+            json_objects.append({
+                "index": i,
+                "data": object_data
+            })
+
         
-            indexed_object = {"index": idx, "data": json_object}
+        # Convert list of objects to JSON
+        # json_output = json.dumps(json_objects, indent=4)
+        # take out page 0
+        idx=0
+        for i in range(len(json_objects)):
+            if json_objects[i]['data'].get("page_number") == 0: 
+                idx =json_objects[i]['index']
+                logging.info (f" === rag_weaviate.py - retrival_json - index {idx} page_number is 0")
+                break
+                
+        retrieve_json = [item for item in json_objects if item["index"] != idx]
 
-            idx =idx+1
-            print (idx)
-            print (json_object)
-            print ()
+        return json.dumps(retrieve_json, indent=4)
 
-        #print ( " === rag_weaviate.py returned query ojbect ", json.dumps(json_object, indent=4))
-        print()
 
-        return indexed_object
+    
     
 if __name__ =="__main__" :
     prompt = "sumerize the insurance document"

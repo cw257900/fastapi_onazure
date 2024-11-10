@@ -298,5 +298,5 @@ async def main ():
                     json.dumps(status, indent=2, ensure_ascii=False))
 # Entry point
 if __name__ == "__main__":
-    import asyncio
+    
     asyncio.run(main())
