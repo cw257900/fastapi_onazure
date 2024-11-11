@@ -82,19 +82,23 @@ def get_all_filenames(pdf_file_path):
     return all_files
 
 def get_total_object_count (client):
+
+ 
+    url = f"{client._connection.url}/v1/objects/"
+    logging.info(f" === utils.py url:  {url}")
+
+    schema_url =  f"{client._connection.url}/v1/schema/"
+
+    response = requests.get(schema_url)
+    logging.info (f" === utils.py \n {response.json()} \n")  #reponse object has Class name {'classes': [{'class': 'Class_name', ..} need to make sure it's PDF_Collection
+    
     collection = client.collections.get(class_name)
     response = collection.query.fetch_objects()
     object_cnts = len(response.objects)
 
     logging.info( f"\n === utils.py total objects {object_cnts} in {class_name}\n ")
 
-    """
-    i=0
-    for o in response.objects:
-        i = i+1
-        print(i)
-        print(o.properties.get("source"), o.properties.get("page_number"))
-    """
+  
     """
     file_counts = Counter()
     all_files= get_all_filenames(pdf_file_path)
@@ -127,18 +131,19 @@ def delete_by_uuid (client, class_name, uuid) :
     )
 
 
-def get_client():
+
+def get_client() :
     try:
         return vector_store.create_client()
     except Exception as e:
         logging.warning(f" utils.py - Failed to create embedded client: {e}")
-        return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
+        return None
+        #return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
     
 def main():
-   
     client = get_client()
-    #get_total_object_count(client, pdf_file_path)
     get_total_object_count(client)
+   
    
    
 

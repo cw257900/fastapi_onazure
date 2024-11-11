@@ -40,7 +40,7 @@ from configs import configs
 from utils import utils
 
 pdf_file_path = configs.pdf_file_path
-class_name = configs.class_name
+#class_name = configs.class_name class name is from down process calls
 class_description = configs.WEAVIATE_STORE_DESCRIPTION
 OPENAI_API_KEY = configs.OPENAI_API_KEY
 
@@ -159,13 +159,10 @@ async def upsert_single_file_to_store(
                     })
 
         url = f"{client._connection.url}/v1/objects/"
-        object_count = utils.get_total_object_count(client)
-        response["message"].append(f"{object_count} insert into {url}")
-
-        print (response)
         logging.info(f" === url: from upsert_single_file_to_store.py {url}")
-        logging.info(f" === object_count: {object_count}")
-
+        response["message"].append(f"successfully uploaded blobs to {class_name}")
+        logging.info(response)
+      
     except Exception as e:
         logging.error(
             "Error processing document",

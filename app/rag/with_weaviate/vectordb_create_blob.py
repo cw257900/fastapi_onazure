@@ -53,7 +53,7 @@ class PDFProcessor:
     async def upsert_chunks_to_store(self, container_name=container_name, blob_path: str = blob_path):
         try: 
             
-            logging.info(f" === *blob.py - Processing blobs under \n blob path: {blob_path}; \n container: {container_name}; \n connection string: {connection_string}")
+            logging.info(f" === *blob.py - Processing blobs under \n blob path: {blob_path}; \n container: {container_name}")
             print()
 
             container_client = self.blob_service_client.get_container_client(container_name)
@@ -87,7 +87,7 @@ class PDFProcessor:
                     response = await create.upsert_single_file_to_store (
                         temp_pdf_path, 
                         client=client,
-                        class_name="class_name"  # Update `class_name` as needed
+                        class_name=class_name  
                     )
 
                     logging.info("\n === *blob.py - Processing Response:\n%s", json.dumps(response, indent=2))

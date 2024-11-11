@@ -29,7 +29,7 @@ logging.basicConfig(
 # Set API keys and Weaviate URL from environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
-class_name = configs.WEAVIATE_STORE_NAME  # WEAVIATE_STORE_NAME
+class_name = configs.class_name  
 class_description = configs.WEAVIATE_STORE_DESCRIPTION
 #text2vec_model=configs.text2vec_model  
 
@@ -91,8 +91,6 @@ def create_collection(client, class_name, class_description=None,  dimension = 1
     vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_openai( model=text2vec_model)  
     vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_transformers( ) 
     """
-
-
     #client = vector_store.create_client()
     if utils.check_collection_exists(client, class_name):
         logging.info(f" === *schema.py - Collection '{class_name}' already exists.")

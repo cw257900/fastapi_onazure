@@ -5,6 +5,7 @@ import logging
 import asyncio
 import weaviate
 import warnings
+import requests
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -29,12 +30,21 @@ from with_weaviate.configs import configs
 from with_weaviate.vector_stores import vector_stores as vector_store
 import with_weaviate.vectordb_create as create 
 from with_weaviate.vectordb_create_blob  import PDFProcessor
+
 import with_weaviate.vectordb_retrieve as retrive 
 from with_weaviate.utils import utils, vectordb_cleanup as cleanup
 
 class_name = configs.class_name
 
-async def rag_clean_data ():
+async def rag_upload_from_blob():
+    processor = PDFProcessor()
+    response = await processor.upsert_chunks_to_store() 
+
+    logging.info(f"{configs.base_path} is updated to {configs.class_name} : response details: {response}")
+
+    return response 
+
+async def rag_cleanup ():
     response = {
         "status": True,  # Initial status is set to True
         #"error": ['None']      # Initialize error as an empty list
@@ -57,9 +67,9 @@ async def rag_clean_data ():
             })
     finally: 
         return response
-
+    
 async def rag_upload ():
-    client = utils.get_client()
+    
     processor = PDFProcessor()
     response = await processor.upsert_chunks_to_store() 
 
@@ -117,5 +127,12 @@ def rag_retrieval (prompt, limit=3, alpha=0.75 ):
     
 if __name__ =="__main__" :
     prompt = "sumerize the insurance document"
-    rag_retrieval("What is a Constitution? Principles and Concepts", limit=3, alpha=0.75)
-    #asyncio.run(rag_upload())
+    #rag_retrieval("What is a Constitution? Principles and Concepts", limit=3, alpha=0.75)
+    response = requests.get("http://localhost:8079/v1/schema")
+    print (" *** ")
+    print(response.json())
+    print (" *** ")
+    asyncio.run(rag_upload_from_blob())
+    
+    response = requests.get("http://localhost:8079/v1/schema")
+    logging.info (f" === utils.py \n {response.json()} \n") 
