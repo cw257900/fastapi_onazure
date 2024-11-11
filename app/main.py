@@ -6,19 +6,22 @@ import logging
 import sys
 import os
 import json
+import asyncio
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from .rag import rag_llamaindex
+from rag import rag_llamaindex
 from rag import rag_weaviate
 
-# Configure logging
+# Configure logging for development
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.WARNING  # You can change this to DEBUG, WARNING, etc., as needed
+    level=logging.INFO,  # Changed from WARNING to INFO
+    handlers=[
+        logging.StreamHandler()  # This ensures output to console
+    ]
 )
 
-#logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -27,23 +30,16 @@ def read_root():
     return {"use /prompt/'ask' to query; use /upload to load data"}
 
 @app.get("/upload")
-async def upload_data():
-    response = await rag_weaviate.rag_upload()
-    
+async def upload():
+    response = await rag_weaviate.rag_upload_from_blob()
     return response
     
-
-
-@app.get("/query/{ask}")
-async def retrive_json (ask:str):
-
-    indexed_object= rag_weaviate.rag_retrieval( ask, limit =5 )
-    #json_list = await run_in_threadpool(rag_weaviate.rag_retrieval, ask, limit =2)
-
-    print ( " ****** main.py *****  ", indexed_object)
-    return indexed_object 
+@app.get("/cleanup")
+async def cleanup():
     
-
+    response = await rag_weaviate.rag_cleanup()
+    logging.info(response)
+    return response
 
 @app.get("/prompt/{ask}")
 async def read_llamindex (ask: str):
@@ -56,5 +52,22 @@ async def read_llamindex (ask: str):
     
     # Ensure response is serializable
     return {"Prompt": str(response)}
-    
 
+
+@app.get("/query/{ask}")
+async def retrieve(ask: str):
+    indexed_object =  rag_weaviate.rag_retrieval(ask, limit=2)
+    logging.info (f" === main.py - indexed_object {indexed_object}")
+
+    return indexed_object
+
+async def main():
+    # Call retrieve_json with a test query
+    #response = await upload ()
+    #reponse = await retrieve("constitution")
+    response = await cleanup()
+   
+
+# Entry point
+if __name__ == "__main__":
+    asyncio.run(main())

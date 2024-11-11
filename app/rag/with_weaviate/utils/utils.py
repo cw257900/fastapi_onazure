@@ -9,24 +9,35 @@ from weaviate.exceptions import WeaviateBaseError
 import requests
 import inspect
 import logging
-logging.basicConfig(level=logging.ERROR)
+from collections import Counter
+
+# Configure logging for development
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,  # Changed from WARNING to INFO
+    handlers=[
+        logging.StreamHandler()  # This ensures output to console
+    ]
+)
 
 import warnings
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
-os.environ["LOG_LEVEL"] = "ERROR"
 
 # Add the parent directory (or wherever "with_pinecone" is located) to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import vector_stores.vector_stores as vector_store
 import configs.configs as configs
 
+pdf_file_path = configs.pdf_file_path
+class_name = configs.class_name
+
 # Function to check if a collection (class) exists
 def check_collection_exists(client, collection_name: str) -> bool:
     try:
         return client.collections.exists(collection_name)
     except Exception as e:
-        print(f"Error checking if collection exists: {e}")
+        logging.warning(f" *** utils.py - Error checking if collection exists: {e}")
         return False
 
 # Using context management if Weaviate client supports it
@@ -60,42 +71,57 @@ def reflect_weaviate_client(client):
     for name, method in inspect.getmembers(client.batch, predicate=inspect.isfunction):
         print(f"Method: {name}, Callable: {method}")
 
+def get_all_filenames(pdf_file_path):
+    all_files = []
+    for dirpath, dirnames, filenames in os.walk(pdf_file_path):
+        for filename in filenames:
+            if not filename.startswith('.'):  # Exclude files that start with a dot
+                all_files.append(os.path.join(dirpath, filename))
 
-def get_total_object_count(client) -> int:
-    """
-    Get the total count of objects in the Weaviate instance.
+    #logging.info(f"\n utils.py -- all files \n {json.dumps(all_files, indent=2)}")
+    return all_files
 
-    Args:
-        client: Weaviate client instance (to get the base URL).
+def get_total_object_count (client):
 
-    Returns:
-        int: The total count of objects, or 0 if an error occurs.
-    """
-    try:
-        # Construct the URL for the objects endpoint
-        
-        url = f"{client._connection.url}/v1/objects/"
+ 
+    url = f"{client._connection.url}/v1/objects/"
+    logging.info(f" === utils.py url:  {url}")
 
-        print (" === url from utils.py: " ,url)
-        
-        # Make the GET request to get the total object count
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an error for non-200 status codes
-        
-        # Extract the total count from the JSON response
-        data = response.json()
-        total_count = data.get("totalResults", 0)
-        return total_count
+    schema_url =  f"{client._connection.url}/v1/schema/"
+
+    response = requests.get(schema_url)
+    logging.info (f" === utils.py \n {response.json()} \n")  #reponse object has Class name {'classes': [{'class': 'Class_name', ..} need to make sure it's PDF_Collection
     
-    except requests.exceptions.RequestException as e:
-        print(f"Error while getting total object count: {e}")
-        return 0
+    collection = client.collections.get(class_name)
+    response = collection.query.fetch_objects()
+    object_cnts = len(response.objects)
 
-# Delete all objects in the class without deleting the schema
-def delete_objects(client, class_name): 
-    # Delete all objects in the class without deleting the schema
-    result = client.collections.delete(class_name) 
-    print(result)
+    logging.info( f"\n === utils.py total objects {object_cnts} in {class_name}\n ")
+
+  
+    """
+    file_counts = Counter()
+    all_files= get_all_filenames(pdf_file_path)
+    for filename in all_files:
+        count = sum(1 for o in response.objects if o.properties.get("source") == filename)
+        file_counts[filename] = count
+        
+    logging.info(f" === utils.py counts per file \n {json.dumps(file_counts, indent=2)}")
+
+    # Define the path to save the JSON file
+    output_file_path = "temp.txt"  # Update with your desired path
+
+    with open(output_file_path, "w") as f:
+        for i, o in enumerate(response.objects, start=1):
+            f.write(f"Object {i} properties:\n")
+            # Access only the properties dictionary of each object
+            for key, value in o.properties.items():
+                f.write(f"  {key}: {value}\n")
+            f.write("\n")  # Separate objects by a newline
+    """
+
+    return object_cnts
+
 
 def delete_by_uuid (client, class_name, uuid) :
 
@@ -105,51 +131,21 @@ def delete_by_uuid (client, class_name, uuid) :
     )
 
 
-# Add a function to get collection stats
-def get_collection_stats(client, class_name: str) -> dict:
-    try:
-        collection = client.collections.get(class_name)
-        count = collection.aggregate.over_all().count()
-        
-        stats = {
-            "collection_name": class_name,
-            "object_count": count,
-            "exists": client.collections.exists(class_name),
-            "url": client.url
-        }
-        
-        logging.info("\nCollection Stats:\n%s", json.dumps(stats, indent=2))
-        return stats
-        
-    except Exception as e:
-        logging.error(f"Error getting collection stats: {str(e)}", exc_info=True)
-        return None
-    
-def get_client():
+
+def get_client() :
     try:
         return vector_store.create_client()
     except Exception as e:
-        logging.warning(f"Failed to create embedded client: {e}")
-        return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
+        logging.warning(f" utils.py - Failed to create embedded client: {e}")
+        return None
+        #return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
     
 def main():
-    print ()
-    print ("weaviate version:", weaviate.__version__)
-  
     client = get_client()
-
-    #collection = client.collections.get(class_name)
-    delete_objects(client, configs.class_name)
-    print ()
-    #print (" === class name: " , configs.class_name)
-    #print (" === collection existing: ", check_collection_exists (client, configs.class_name) )
-    print (" === total counts of objects: ", get_total_object_count(client))
-
-
-    print()
-  
+    get_total_object_count(client)
+   
+   
    
 
 if __name__ == "__main__":
-
     main()

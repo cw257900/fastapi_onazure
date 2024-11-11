@@ -29,6 +29,9 @@ class_name =configs.class_name
 class_description =configs.WEAVIATE_STORE_DESCRIPTION
 os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
 
+
+client = utils.get_client()
+
 def create_error_response(error_code: str, custom_details: str = None) -> dict:
     error = configs.ERROR_CODES[error_code].copy()
     if custom_details:
@@ -37,14 +40,8 @@ def create_error_response(error_code: str, custom_details: str = None) -> dict:
     logging.error(json.dumps(error, indent=4))
     return {"error": error}
 
-def get_client():
-    try:
-        return vector_store.create_client()
-    except Exception as e:
-        logging.warning(f"Failed to create embedded client: {e}")
-        return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
 
-def query(query_text: str, class_name: str = class_name, limit: int = 5) -> dict:
+def query(query_text: str,  class_name: str = class_name, limit: int =2, alpha =0.75) -> dict:
     """
     Perform a hybrid search query on the vector database.
     
@@ -56,12 +53,11 @@ def query(query_text: str, class_name: str = class_name, limit: int = 5) -> dict
     Returns:
         dict: Search results or error response
     """
-    
-    try: 
-        
-        error_json = None
+    logging.info(f" === *retrieve.py - alpha {alpha}")
+    logging.info(f" === *retrieve.py - limit {limit}")
 
-        client = get_client()
+    try: 
+        error_json = None
            
         if not client.collections.exists(class_name):
             return create_error_response("R001")
@@ -73,8 +69,8 @@ def query(query_text: str, class_name: str = class_name, limit: int = 5) -> dict
         else:      
             response = collection.query.hybrid(
                 query=query_text,
-                alpha=0.75,
-                limit=5,
+                alpha=alpha,
+                limit=limit,
                 return_metadata=MetadataQuery(score=True, explain_score=True),
             )
             
@@ -98,7 +94,7 @@ def query(query_text: str, class_name: str = class_name, limit: int = 5) -> dict
 
     finally: 
         logging.info(f" === url: {client._connection.url}")
-        logging.info(f" === object_count: {utils.get_total_object_count(client)}")
+        #logging.info(f" === object_count: {utils.get_total_object_count(client)}")
         #vector_store.close_client(client)
 
 
@@ -146,9 +142,8 @@ def retrieve_semantic_vector_search():
 
     # provide summary of constitution
 
-    hybrid_rlt =  query (ask=question, limit=1)
+    hybrid_rlt =  query (ask=question, limit=3)
 
-    print("\nResults for hybrid search:")
     for o in hybrid_rlt.objects:
        
         print(json.dumps(o.properties, indent=4))
@@ -160,8 +155,28 @@ def retrieve_semantic_vector_search():
 
   
 def main():
-    response = query ("constituation",   limit = 5)
-    #print (response)
+    response = query ("sumerize constitution",   limit =2)
+    idx =0
+    for o in response.objects:
+
+            json_object =[]
+            
+            json_object = {
+                "page_content": o.properties.get("page_content"),
+                "page_number": o.properties.get("page_number"),
+                "source": o.properties.get("source"),
+                #"uploadDate": o.properties.get("uploadDate").isoformat(), #covert date to json comparable ISO 8601 string. 
+                "score": o.metadata.score,
+                "explain_score": str(o.metadata.explain_score).replace("\n", "")
+            }
+        
+            indexed_object = {"index": idx, "data": json_object}
+
+            idx =idx+1
+            logging.info (f" === *retrieve.py main index {idx}")
+            logging.info (f" === *retrieve.py main json_object {json_object}")
+            logging.info (" === *retrieve.py end")
+
 
 # Call the main function
 if __name__ == "__main__":

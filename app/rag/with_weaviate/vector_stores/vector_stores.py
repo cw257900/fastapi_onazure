@@ -12,6 +12,17 @@ from weaviate.embedded import EmbeddedOptions
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from configs import configs
 
+import logging
+# Configure logging for development
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,  # Changed from WARNING to INFO
+    handlers=[
+        logging.StreamHandler()  # This ensures output to console
+    ]
+)
+
+
 os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
 
 
@@ -27,7 +38,7 @@ def create_client():
         grpc={"host": WEAVIATE_HOST, "port": WEAVIATE_GRPC_PORT, "secure": False}
     )
     """
-    # client = weaviate.connect_to_local( headers = {"X-OpenAI-Api-Key": OPENAI_API_KEY})
+    #client = weaviate.connect_to_local( headers = {"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
     """
     client = weaviate.use_async_with_embedded (
         version="1.26.1",
@@ -37,6 +48,7 @@ def create_client():
     )
     """
     
+  
     client = weaviate.connect_to_embedded(
         version="latest",
         persistence_data_path=configs.WEAVIATE_PERSISTENCE_PATH,
@@ -46,8 +58,8 @@ def create_client():
         }
     )
  
-    print (" === vectore_stores.py: embeded client initated " , client)
-
+    logging.info (" === vectore_stores.py - embeded client initated {}".format(client))
+    
 
     return client
 
@@ -57,7 +69,6 @@ def close_client(client):
     if client:
         client.close()
         print("Weaviate client closed.")
-
 
 if __name__ == "__main__":
 

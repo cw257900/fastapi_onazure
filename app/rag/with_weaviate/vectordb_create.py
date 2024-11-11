@@ -40,7 +40,7 @@ from configs import configs
 from utils import utils
 
 pdf_file_path = configs.pdf_file_path
-class_name = configs.class_name
+#class_name = configs.class_name class name is from down process calls
 class_description = configs.WEAVIATE_STORE_DESCRIPTION
 OPENAI_API_KEY = configs.OPENAI_API_KEY
 
@@ -111,17 +111,6 @@ async def upsert_embeddings_to_vector_store(pdf_file_path, vector_store,  class_
        vector_store.close_client(client)
 
 
-
-# Use context manager for client
-from contextlib import asynccontextmanager
-@asynccontextmanager
-async def get_weaviate_client():
-    client = vector_store.create_client()
-    try:
-        yield client
-    finally:
-        vector_store.close_client(client)
-
 async def upsert_single_file_to_store(
     pdf_path: str,
     client: weaviate.Client,
@@ -129,6 +118,7 @@ async def upsert_single_file_to_store(
     
     response = {
         "status": True,
+        "message": [],
         "error": ['None']
     }
 
@@ -168,6 +158,11 @@ async def upsert_single_file_to_store(
                         "details": str(insert_error)
                     })
 
+        url = f"{client._connection.url}/v1/objects/"
+        logging.info(f" === url: from upsert_single_file_to_store.py {url}")
+        response["message"].append(f"successfully uploaded blobs to {class_name}")
+        logging.info(response)
+      
     except Exception as e:
         logging.error(
             "Error processing document",
@@ -185,14 +180,11 @@ async def upsert_single_file_to_store(
         })
     
     finally:
-        url = f"{client._connection.url}/v1/objects/"
-        object_count = utils.get_total_object_count(client)
-        logging.info(f" === url: from upsert_single_file_to_store.py {url}")
-        logging.info(f" === object_count: {object_count}")
+       
         pass
         #vector_store.close_client(client)
     
-    return response
+        return response
 
 
 # weaviate v4 code
@@ -206,7 +198,7 @@ async def upsert_chunks_to_store(
     
     response = {
         "status": True,  # Initial status is set to True
-        #"error": ['None']      # Initialize error as an empty list
+        "message": [],
         "error": []
     }
  
@@ -267,18 +259,13 @@ async def upsert_chunks_to_store(
 
         except Exception as e:
             
-            logging.warning(f"Exception occurred: {e}")  # Logs with stack trace
+            logging.warning(f"{filename} Exception occurred: {e}")  # Logs with stack trace
             #traceback.print_exc() 
 
-            """
-            Sample Error:
-            1. File already uploaded: uuid will duplicate: Error: Object was not added! Unexpected status code: 422, with response body: {'error': [{'message': "id '89695fbf-06c7-599c-8da2-2c11028dd130' already exists"}]}.
-
-            """
             response["status"] = False
             response["error"].append({
                 "code": "C002",
-                "message": "An internal error occurred while processing the request.",
+                "message": f"An internal error occurred while processing the file: {filename}",
                 "details": str(e)
             })
 
@@ -286,9 +273,19 @@ async def upsert_chunks_to_store(
             logging.info(f"\nDocument {file_path} Processing Status:\n%s", 
                     json.dumps(response, indent=2, ensure_ascii=False))
           
- 
+    
+      
+    url = f"{client._connection.url}/v1/objects/"
+    object_count = utils.get_total_object_count(client)
+    response["message"].append(f"{object_count} already in {url}")
+
+    print (response)
+    logging.info(f" === *created.py - url: from upsert_single_file_to_store.py {url}")
+    logging.info(f" === *created.py - object_count: {object_count}")
+
     # The Python client uses standard HTTP requests, which are automatically closed after the response is received.
-    vector_store.close_client(client)
+
+    #vector_store.close_client(client)
     
     return response 
  
@@ -297,15 +294,13 @@ async def upsert_chunks_to_store(
 
 async def main ():   
     pdf_file_path=configs.pdf_file_path
-    async with get_weaviate_client() as client:
-        status = await upsert_chunks_to_store(pdf_file_path, client, class_name)
-        logging.info("\nDocument Processing Status:\n%s", 
+    client = utils.get_client()
+    
+    status = await upsert_chunks_to_store(pdf_file_path, client, class_name)
+    logging.info("\nDocument Processing Status: for {pdf_file_path}\n%s", 
                     json.dumps(status, indent=2, ensure_ascii=False))
+    
 # Entry point
 if __name__ == "__main__":
-    import asyncio
+    
     asyncio.run(main())
-
-
-
-

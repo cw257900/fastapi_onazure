@@ -1,11 +1,20 @@
 
 import os
 import sys
-
+import logging
 from dotenv import load_dotenv
 load_dotenv()
 
-WEAVIATE_STORE_NAME="PDF_COLLECTION"
+# Configure logging for development
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,  # Changed from WARNING to INFO
+    handlers=[
+        logging.StreamHandler()  # This ensures output to console
+    ]
+)
+
+
 class_name = "PDF_COLLECTION"
 WEAVIATE_STORE_DESCRIPTION="collections"
 WEAVIATE_PERSISTENCE_PATH="./weaviate_data"
@@ -14,6 +23,8 @@ WEAVIATE_PERSISTENCE_PATH="./weaviate_data"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")  # Weaviate API key
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
+AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+AZURE_CONTAINER_NAME =  "sacontainer" 
 
 chunk_size=5000
 chunk_overlap=300
@@ -24,18 +35,24 @@ BATCH_SIZE = 100
 WATCH_DIRECTORY = "rag/data"
 print (" configs.py - variable WATCH_DIRECTORY: ", WATCH_DIRECTORY )
 blob_name = "rag/data/constitution.pdf"
+blob_path = "rag/data"
+logging.info (" === configs.py - variable blob_name used for azure: {}".format(blob_name))
+
+
 
 base_path =os.getcwd()
 def find_data_folder(base_path, folder_name="data"): #find the path of "data" folder, as used to host pdf fils there 
     for root, dirs, files in os.walk(base_path):
         if folder_name in dirs:
             return os.path.join(root, folder_name)
+        
+
 pdf_file_path = find_data_folder (base_path, "data") #this variable = None, means it couldn't fine "data" folder
 
-print (" configs.py - variable pdf_file_path: ", pdf_file_path )
+logging.info (" === configs.py - variable pdf_file_path used for local file under /data : {}".format(pdf_file_path))
 
 ERROR_CODES = {
-    "R001": {
+    "R001": { #retrieve
         "code": "R001",
         "message": "Collection is not in system",
         "details": "Ensure vector store created and have data uploaded."
@@ -50,7 +67,7 @@ ERROR_CODES = {
         "message": "An internal error occurred while processing the request.",
         "details": "Generic error message - details will be populated at runtime"
     },
-    "C001": {
+    "C001": { #create
         "code": "C001",
         "message": "Non-PDF file skipped",
         "details": "File type not supported"
@@ -59,5 +76,10 @@ ERROR_CODES = {
         "code": "C002",
         "message": "Internal processing error",
         "details": "Error during document processing"
+    },
+    "D001": {
+        "code": "D001",
+        "message": "Internal processing error",
+        "details": "Error during cleanup"
     }
 }
