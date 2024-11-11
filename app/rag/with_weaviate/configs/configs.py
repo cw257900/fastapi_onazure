@@ -23,6 +23,8 @@ WEAVIATE_PERSISTENCE_PATH="./weaviate_data"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")  # Weaviate API key
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
+AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+AZURE_CONTAINER_NAME =  "sacontainer" 
 
 chunk_size=5000
 chunk_overlap=300
@@ -32,7 +34,8 @@ BATCH_SIZE = 100
 
 WATCH_DIRECTORY = "rag/data"
 print (" configs.py - variable WATCH_DIRECTORY: ", WATCH_DIRECTORY )
-blob_name = "rag/data"
+blob_name = "rag/data/constitution.pdf"
+blob_path = "rag/data"
 logging.info (" === configs.py - variable blob_name used for azure: {}".format(blob_name))
 
 

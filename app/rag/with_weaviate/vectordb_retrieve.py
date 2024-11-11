@@ -29,6 +29,9 @@ class_name =configs.class_name
 class_description =configs.WEAVIATE_STORE_DESCRIPTION
 os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
 
+
+client = utils.get_client()
+
 def create_error_response(error_code: str, custom_details: str = None) -> dict:
     error = configs.ERROR_CODES[error_code].copy()
     if custom_details:
@@ -37,14 +40,8 @@ def create_error_response(error_code: str, custom_details: str = None) -> dict:
     logging.error(json.dumps(error, indent=4))
     return {"error": error}
 
-def get_client():
-    try:
-        return vector_store.create_client()
-    except Exception as e:
-        logging.warning(f"Failed to create embedded client: {e}")
-        return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
 
-def query(query_text: str, class_name: str = class_name, limit: int =2, alpha =0.75) -> dict:
+def query(query_text: str,  class_name: str = class_name, limit: int =2, alpha =0.75) -> dict:
     """
     Perform a hybrid search query on the vector database.
     
@@ -60,10 +57,7 @@ def query(query_text: str, class_name: str = class_name, limit: int =2, alpha =0
     logging.info(f" === *retrieve.py - limit {limit}")
 
     try: 
-        
         error_json = None
-
-        client = get_client()
            
         if not client.collections.exists(class_name):
             return create_error_response("R001")
@@ -100,7 +94,7 @@ def query(query_text: str, class_name: str = class_name, limit: int =2, alpha =0
 
     finally: 
         logging.info(f" === url: {client._connection.url}")
-        logging.info(f" === object_count: {utils.get_total_object_count(client)}")
+        #logging.info(f" === object_count: {utils.get_total_object_count(client)}")
         #vector_store.close_client(client)
 
 

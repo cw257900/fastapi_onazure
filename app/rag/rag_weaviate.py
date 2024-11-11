@@ -28,6 +28,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from with_weaviate.configs import configs
 from with_weaviate.vector_stores import vector_stores as vector_store
 import with_weaviate.vectordb_create as create 
+from with_weaviate.vectordb_create_blob  import PDFProcessor
 import with_weaviate.vectordb_retrieve as retrive 
 from with_weaviate.utils import utils, vectordb_cleanup as cleanup
 
@@ -59,8 +60,8 @@ async def rag_clean_data ():
 
 async def rag_upload ():
     client = utils.get_client()
-        
-    response = await create.upsert_chunks_to_store(configs.pdf_file_path,  client , configs.class_name) 
+    processor = PDFProcessor()
+    response = await processor.upsert_chunks_to_store() 
 
     logging.info(f"{configs.pdf_file_path} is updated to {configs.class_name} : response details: {response}")
 
@@ -71,7 +72,7 @@ def rag_retrieval (prompt, limit=3, alpha=0.75 ):
 
     json_list = []
     logging.info (" === rag_weaviate.py retrieval that rag asking {}".format(prompt))
-    response = retrive.query(prompt,  limit=limit)
+    response = retrive.query(prompt,  limit=limit, alpha=alpha)
 
     print ()
    
@@ -117,4 +118,4 @@ def rag_retrieval (prompt, limit=3, alpha=0.75 ):
 if __name__ =="__main__" :
     prompt = "sumerize the insurance document"
     rag_retrieval("What is a Constitution? Principles and Concepts", limit=3, alpha=0.75)
-    #rag_upload()
+    #asyncio.run(rag_upload())

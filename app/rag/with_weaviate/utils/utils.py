@@ -86,6 +86,8 @@ def get_total_object_count (client):
     response = collection.query.fetch_objects()
     object_cnts = len(response.objects)
 
+    logging.info( f"\n === utils.py total objects {object_cnts} in {class_name}\n ")
+
     """
     i=0
     for o in response.objects:
@@ -93,7 +95,7 @@ def get_total_object_count (client):
         print(i)
         print(o.properties.get("source"), o.properties.get("page_number"))
     """
-
+    """
     file_counts = Counter()
     all_files= get_all_filenames(pdf_file_path)
     for filename in all_files:
@@ -112,8 +114,9 @@ def get_total_object_count (client):
             for key, value in o.properties.items():
                 f.write(f"  {key}: {value}\n")
             f.write("\n")  # Separate objects by a newline
-    
-    return file_counts
+    """
+
+    return object_cnts
 
 
 def delete_by_uuid (client, class_name, uuid) :
@@ -124,21 +127,6 @@ def delete_by_uuid (client, class_name, uuid) :
     )
 
 
-# Add a function to get collection stats
-def get_collection_stats(client, class_name: str) -> dict:
-    try:
-        collection = client.collections.get(class_name)
-
-        
-        
-        
-        
-        
-        
-    except Exception as e:
-        logging.error(f"Error getting collection stats: {str(e)}", exc_info=True)
-        return None
-    
 def get_client():
     try:
         return vector_store.create_client()
@@ -149,6 +137,7 @@ def get_client():
 def main():
    
     client = get_client()
+    #get_total_object_count(client, pdf_file_path)
     get_total_object_count(client)
    
    
