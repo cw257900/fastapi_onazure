@@ -32,6 +32,7 @@ def read_root():
 @app.get("/upload")
 async def upload():
     response = await rag_weaviate.rag_upload_from_blob()
+    logging.info (f" === main.py - upload {response}")
     return response
     
 @app.get("/cleanup")
@@ -57,15 +58,15 @@ async def read_llamindex (ask: str):
 @app.get("/query/{ask}")
 async def retrieve(ask: str):
     indexed_object =  rag_weaviate.rag_retrieval(ask, limit=2)
-    logging.info (f" === main.py - indexed_object {indexed_object}")
+    logging.info (f" === main.py - retrieve {indexed_object}")
 
     return indexed_object
 
 async def main():
     # Call retrieve_json with a test query
-    #response = await upload ()
+    response = await upload ()
     #reponse = await retrieve("constitution")
-    response = await cleanup()
+    #response = await cleanup()
    
 
 # Entry point

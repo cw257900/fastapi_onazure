@@ -6,12 +6,14 @@ import asyncio
 import weaviate
 import warnings
 import requests
+
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 #import with_weaviate.vectordb_retrieve as retrive 
 #import with_weaviate.vectordb_create as create 
 #from with_weaviate.vector_stores import vector_stores  as vectore_store
+from with_weaviate.utils import utils
 
 # Configure logging for development
 logging.basicConfig(
@@ -22,7 +24,7 @@ logging.basicConfig(
     ]
 )
 
-
+client = utils.get_client()
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -44,14 +46,14 @@ async def rag_upload_from_blob():
 
     return response 
 
-async def rag_cleanup ():
+async def rag_cleanup (client =client ):
     response = {
         "status": True,  # Initial status is set to True
         #"error": ['None']      # Initialize error as an empty list
         "error": []
     }
     try: 
-        client = utils.get_client()
+        
         cleanup.delete_objects(client, class_name)
 
     except Exception as e:
@@ -68,21 +70,21 @@ async def rag_cleanup ():
     finally: 
         return response
     
-async def rag_upload ():
+async def rag_upload (client=client):
     
     processor = PDFProcessor()
-    response = await processor.upsert_chunks_to_store() 
+    response = await processor.upsert_chunks_to_store(client) 
 
     logging.info(f"{configs.pdf_file_path} is updated to {configs.class_name} : response details: {response}")
 
     return response 
 
 # Function to build index over data file
-def rag_retrieval (prompt, limit=3, alpha=0.75 ):
+def rag_retrieval (prompt,client, limit=3, alpha=0.75 ):
 
     json_list = []
     logging.info (" === rag_weaviate.py retrieval that rag asking {}".format(prompt))
-    response = retrive.query(prompt,  limit=limit, alpha=alpha)
+    response = retrive.query(prompt, client, limit=limit, alpha=alpha)
 
     print ()
    
@@ -132,7 +134,7 @@ if __name__ =="__main__" :
     print (" *** ")
     print(response.json())
     print (" *** ")
-    asyncio.run(rag_upload_from_blob())
+    asyncio.run(rag_upload_from_blob(client))
     
     response = requests.get("http://localhost:8079/v1/schema")
     logging.info (f" === utils.py \n {response.json()} \n") 
