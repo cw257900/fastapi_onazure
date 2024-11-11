@@ -20,13 +20,28 @@ class_name = configs.class_name  # WEAVIATE_STORE_NAME
 
 # Delete all objects in the class without deleting the schema
 def delete_objects(client, class_name): 
+    status_rtn = {
+            "status": True,
+            "message": [],
+            "error": ['None']
+        }
     
     # Delete all objects in the class without deleting the schema
-    utils.get_total_object_count(client)
-    result = client.collections.delete(class_name) 
-    logging.info ( f" === *cleanup.py  {class_name}")
-    logging.info ( f" === *cleanup.py  { result}")
-    return result
+    try: 
+        result = client.collections.delete(class_name) 
+        logging.info ( f" === *cleanup.py  {class_name}")
+        logging.info ( f" === *cleanup.py  { result}")
+
+        status_rtn["message"].append(f"successfully deleted {class_name}")
+
+    except Exception as e:
+        status_rtn["status"] = False
+        status_rtn["error"].append({
+                        "code": "C003",
+                        "message": f"Error while cleanup {class_name}",
+                        "details": str(e)
+        })
+    return status_rtn
     
    
 

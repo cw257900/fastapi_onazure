@@ -41,7 +41,7 @@ logging.basicConfig (
 )
 
 
-client = utils.get_client()
+#client = utils.get_client()
 
 class PDFProcessor:
     def __init__(self):
@@ -50,7 +50,13 @@ class PDFProcessor:
         """
         self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
 
-    async def upsert_chunks_to_store(self, container_name=container_name, blob_path: str = blob_path):
+    async def upsert_chunks_to_store(self, client , container_name=container_name, blob_path: str = blob_path):
+        
+        status_rtn = {
+            "status": True,
+            "message": [],
+            "error": ['None']
+        }
         try: 
             
             logging.info(f" === *blob.py - Processing blobs under \n blob path: {blob_path}; \n container: {container_name}")
@@ -89,6 +95,7 @@ class PDFProcessor:
                         client=client,
                         class_name=class_name  
                     )
+                    
 
                     logging.info("\n === *blob.py - Processing Response:\n%s", json.dumps(response, indent=2))
                 
@@ -98,15 +105,33 @@ class PDFProcessor:
                         extra={"error_type": type(e).__name__, "error_message": str(e)},
                         exc_info=True
                     )
+                    response["status"] = False
+                    response["error"].append({
+                        "code": "C003",
+                        "message": f"Error while insert {blob.name} from azure blob",
+                        "details": str(e)
+                    })
                     continue  # Log the error and move to the next blob
 
+            response["message"] = f"successfully uploaded blob data {blob_path}"   
+                 
         except Exception as main_error:
             logging.error (
                 "Blob listing or processing error",
                 extra={"error_type": type(main_error).__name__, "error_message": str(main_error)},
                 exc_info=True
             )
+            response["status"] = False
+            response["error"].append({
+                    "code": "C004",
+                    "message": f"Error while insert {blob_list} from azure blob",
+                    "details": str(e)
+             })
+
             raise
+
+        finally:
+            return status_rtn
 
 
 
@@ -157,7 +182,8 @@ def main():
 
     # Initialize processor
     processor = PDFProcessor()
-    asyncio.run(processor.upsert_chunks_to_store())
+    client = utils.get_client()
+    asyncio.run(processor.upsert_chunks_to_store(client))
 
 if __name__ == "__main__":
     main()

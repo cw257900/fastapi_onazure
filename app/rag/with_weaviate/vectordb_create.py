@@ -295,7 +295,7 @@ async def upsert_chunks_to_store(
 async def main ():   
     pdf_file_path=configs.pdf_file_path
     client = utils.get_client()
-    
+    class_name = utils.class_name
     status = await upsert_chunks_to_store(pdf_file_path, client, class_name)
     logging.info("\nDocument Processing Status: for {pdf_file_path}\n%s", 
                     json.dumps(status, indent=2, ensure_ascii=False))

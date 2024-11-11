@@ -30,8 +30,6 @@ class_description =configs.WEAVIATE_STORE_DESCRIPTION
 os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
 
 
-client = utils.get_client()
-
 def create_error_response(error_code: str, custom_details: str = None) -> dict:
     error = configs.ERROR_CODES[error_code].copy()
     if custom_details:
@@ -41,7 +39,7 @@ def create_error_response(error_code: str, custom_details: str = None) -> dict:
     return {"error": error}
 
 
-def query(query_text: str,  class_name: str = class_name, limit: int =2, alpha =0.75) -> dict:
+def query(query_text: str, client, class_name: str = class_name, limit: int =2, alpha =0.75) -> dict:
     """
     Perform a hybrid search query on the vector database.
     
@@ -58,7 +56,7 @@ def query(query_text: str,  class_name: str = class_name, limit: int =2, alpha =
 
     try: 
         error_json = None
-           
+        
         if not client.collections.exists(class_name):
             return create_error_response("R001")
         
@@ -93,9 +91,10 @@ def query(query_text: str,  class_name: str = class_name, limit: int =2, alpha =
             return create_error_response("R003", custom_details=str(e))
 
     finally: 
-        logging.info(f" === url: {client._connection.url}")
+        #logging.info(f" === url: {client._connection.url}")
         #logging.info(f" === object_count: {utils.get_total_object_count(client)}")
         #vector_store.close_client(client)
+        None
 
 
 # Sample function to use gql_getSingleObjectById
@@ -155,9 +154,16 @@ def retrieve_semantic_vector_search():
 
   
 def main():
-    response = query ("sumerize constitution",   limit =2)
-    idx =0
-    for o in response.objects:
+
+    client = utils.get_client()
+    response = query ("sumerize constitution", client,  limit =2)
+    try: 
+        if "error" in response: 
+            logging.error (" === *retrieve.py - main " , response)
+            return 
+    except Exception as e: 
+        idx =0
+        for o in response.objects:
 
             json_object =[]
             

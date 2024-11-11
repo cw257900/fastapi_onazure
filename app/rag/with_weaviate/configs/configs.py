@@ -77,6 +77,16 @@ ERROR_CODES = {
         "message": "Internal processing error",
         "details": "Error during document processing"
     },
+     "C003": {
+        "code": "C003",
+        "message": "Internal processing error",
+        "details": "Error while upload azure blob data"
+    },
+     "C004": {
+        "code": "C004",
+        "message": "Internal processing error",
+        "details": "Error while upload azure list of blob path"
+    },
     "D001": {
         "code": "D001",
         "message": "Internal processing error",
