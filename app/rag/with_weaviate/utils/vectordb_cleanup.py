@@ -28,7 +28,6 @@ def delete_objects(client, class_name):
     
     # Delete all objects in the class without deleting the schema
     try: 
-        utils.get_total_object_count(client)
         result = client.collections.delete(class_name) 
         logging.info ( f" === *cleanup.py  {class_name}")
         logging.info ( f" === *cleanup.py  { result}")

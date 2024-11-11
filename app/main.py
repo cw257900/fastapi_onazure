@@ -39,9 +39,10 @@ async def upload():
 async def cleanup():
     
     response = await rag_weaviate.rag_cleanup()
-    logging.info(response)
+    logging.info(f" === main.py - cleanup {response}")
     return response
 
+"""
 @app.get("/prompt/{ask}")
 async def read_llamindex (ask: str):
    
@@ -53,7 +54,7 @@ async def read_llamindex (ask: str):
     
     # Ensure response is serializable
     return {"Prompt": str(response)}
-
+"""
 
 @app.get("/query/{ask}")
 async def retrieve(ask: str):

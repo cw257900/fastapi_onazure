@@ -6,14 +6,9 @@ import asyncio
 import weaviate
 import warnings
 import requests
+import traceback
 
 warnings.filterwarnings("ignore", category=ResourceWarning)
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-#import with_weaviate.vectordb_retrieve as retrive 
-#import with_weaviate.vectordb_create as create 
-#from with_weaviate.vector_stores import vector_stores  as vectore_store
-from with_weaviate.utils import utils
 
 # Configure logging for development
 logging.basicConfig(
@@ -24,23 +19,22 @@ logging.basicConfig(
     ]
 )
 
-client = utils.get_client()
-
 # Add the parent directory to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from with_weaviate.configs import configs
 from with_weaviate.vector_stores import vector_stores as vector_store
-import with_weaviate.vectordb_create as create 
 from with_weaviate.vectordb_create_blob  import PDFProcessor
-
-import with_weaviate.vectordb_retrieve as retrive 
 from with_weaviate.utils import utils, vectordb_cleanup as cleanup
+import with_weaviate.vectordb_retrieve as retrive 
+import with_weaviate.vectordb_create as create 
+from with_weaviate.utils import utils
 
 class_name = configs.class_name
+client = utils.get_client()
 
-async def rag_upload_from_blob():
+async def rag_upload_from_blob(client=client):
     processor = PDFProcessor()
-    response = await processor.upsert_chunks_to_store() 
+    response = await processor.upsert_chunks_to_store(client) 
 
     logging.info(f"{configs.base_path} is updated to {configs.class_name} : response details: {response}")
 
@@ -53,22 +47,15 @@ async def rag_cleanup (client =client ):
         "error": []
     }
     try: 
-        
-        cleanup.delete_objects(client, class_name)
+        response = cleanup.delete_objects(client, class_name)
+        cnt = utils.get_total_object_count(client)
+        logging.info (f"\n === rag_retrieve.py - cleanup {class_name} \n status: {response}; \n counts: {cnt}")
 
     except Exception as e:
-            
-            logging.warning(f" === rag_weaviate.py - rag_cleanup - Exception occurred: \n    {e}")  # Logs with stack trace
-            #traceback.print_exc() 
+        traceback.print_exc()
 
-            response["status"] = False
-            response["error"].append({
-                "code": "D001",
-                "message": f"An internal error occurred while cleanup {class_name}",
-                "details": str(e)
-            })
-    finally: 
-        return response
+    return response
+      
     
 async def rag_upload (client=client):
     
@@ -80,18 +67,17 @@ async def rag_upload (client=client):
     return response 
 
 # Function to build index over data file
-def rag_retrieval (prompt,client, limit=3, alpha=0.75 ):
+def rag_retrieval (prompt,client=client, limit=3, alpha=0.75 ):
 
     json_list = []
     logging.info (" === rag_weaviate.py retrieval that rag asking {}".format(prompt))
     response = retrive.query(prompt, client, limit=limit, alpha=alpha)
-
-    print ()
-   
   
     if isinstance(response, dict):
         if 'error' in response:
             json_list = response
+
+            logging.error (f" === rag_weaviate.py {response}")
             return response
 
     else:
@@ -122,7 +108,9 @@ def rag_retrieval (prompt,client, limit=3, alpha=0.75 ):
                 
         retrieve_json = [item for item in json_objects if item["index"] != idx]
 
-        return json.dumps(retrieve_json, indent=4)
+        logging.info (f" === rag_weaviate.py - retrieve_json: {retrieve_json}")
+
+        return retrieve_json
 
 
     
