@@ -10,6 +10,7 @@ import requests
 import inspect
 import logging
 from collections import Counter
+from weaviate.collections import Collection
 
 # Configure logging for development
 logging.basicConfig(
@@ -32,6 +33,21 @@ import configs.configs as configs
 pdf_file_path = configs.pdf_file_path
 class_name = configs.class_name
 
+def delete_by_uuid (client, class_name, uuid) :
+
+    collection = client.collections.get(class_name)
+    collection.data.delete_by_id(
+        uuid
+    )
+
+def get_client() :
+    try:
+        return vector_store.create_client()
+    except Exception as e:
+        logging.warning(f" utils.py - Failed to create embedded client: {e}")
+        return None
+        #return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
+    
 # Function to check if a collection (class) exists
 def check_collection_exists(client, collection_name: str) -> bool:
     try:
@@ -99,7 +115,7 @@ def get_total_object_count (client):
     logging.info( f"\n === utils.py total objects {object_cnts} in {class_name}\n ")
 
   
-    """
+  
     file_counts = Counter()
     all_files= get_all_filenames(pdf_file_path)
     for filename in all_files:
@@ -118,31 +134,21 @@ def get_total_object_count (client):
             for key, value in o.properties.items():
                 f.write(f"  {key}: {value}\n")
             f.write("\n")  # Separate objects by a newline
-    """
+   
 
     return object_cnts
 
 
-def delete_by_uuid (client, class_name, uuid) :
-
-    collection = client.collections.get(class_name)
-    collection.data.delete_by_id(
-        uuid
-    )
 
 
+def verify_weaviate_v4_contents( collection):
+  None
 
-def get_client() :
-    try:
-        return vector_store.create_client()
-    except Exception as e:
-        logging.warning(f" utils.py - Failed to create embedded client: {e}")
-        return None
-        #return weaviate.connect_to_local(headers={"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
-    
+
 def main():
     client = get_client()
-    get_total_object_count(client)
+    collection = client.collections.get("PDF_COLLECTION")
+    get_total_object_count( client)
    
    
    
