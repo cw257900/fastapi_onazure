@@ -225,7 +225,7 @@ if __name__ =="__main__" :
     upload_to_index( pdf_file_path, persist_dir=PERSIST_DIR)
    
     #query = "summarize constitution.pdf"
-    query = "What's constitution.pdf"
+    query = "What is Article IV?"
     #query = "Key Insights  of constitution.pdf"
     #query = "What's article 4 from contitution.pdf"
   
