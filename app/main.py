@@ -27,7 +27,7 @@ app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"use /prompt/'ask' to query; use /upload to load data"}
+    return {"use /prompt/'ask' to query; use /upload to load data; /cleanup to remove data"}
 
 @app.get("/upload")
 async def upload():
@@ -42,7 +42,7 @@ async def cleanup():
     logging.info(f" === main.py - cleanup {response}")
     return response
 
-"""
+
 @app.get("/prompt/{ask}")
 async def read_llamindex (ask: str):
    
@@ -54,7 +54,6 @@ async def read_llamindex (ask: str):
     
     # Ensure response is serializable
     return {"Prompt": str(response)}
-"""
 
 @app.get("/query/{ask}")
 async def retrieve(ask: str):
@@ -65,9 +64,10 @@ async def retrieve(ask: str):
 
 async def main():
     # Call retrieve_json with a test query
-    response = await upload ()
+    #response = await upload ()
     #reponse = await retrieve("constitution")
     #response = await cleanup()
+    response = await read_llamindex()
    
 
 # Entry point

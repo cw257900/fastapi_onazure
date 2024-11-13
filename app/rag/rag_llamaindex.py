@@ -1,5 +1,9 @@
 import os 
-import llama_index
+import sys
+import logging
+
+import shutil
+from llama_parse import LlamaParse
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import (
     Settings,
@@ -8,27 +12,107 @@ from llama_index.core import (
     StorageContext,
     load_index_from_storage,
 )
-
-from dotenv import load_dotenv
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-
 import warnings
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
-pdf_file_path = os.path.join(os.getcwd(), "app/rag/data")
+# Add the parent directory to the Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from with_weaviate.configs import configs
+pdf_file_path = configs.pdf_file_path
+PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
+os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
 
 
-def load_file_saved_vector_to_local_storage ():
+# Configure logging for development
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,  # Changed from WARNING to INFO
+    handlers=[
+        logging.StreamHandler()  # This ensures output to console
+    ]
+)
+
+def refresh_index( storage_dir=PERSIST_DIR):
+    """
+    Force refresh the index by deleting existing storage and creating new index.
+    
+    Args:
+        pdf_file_path (str): Path to directory containing PDF files
+        storage_dir (str): Directory to store the index
+        
+    Returns:
+        VectorStoreIndex: New document index or None if operation fails
+    """
+    # Remove existing storage if it exists
+    if os.path.exists(storage_dir):
+        try:
+            shutil.rmtree(storage_dir)
+            logging.info(f"Removed existing index storage at {storage_dir}")
+        except Exception as e:
+            logging.exception(f"Error removing existing storage: {str(e)}")
+            return None
+    
+    # Create new index
+    return True
+
+
+def upload_to_index ( pdf_file_path, storage_dir) :
+
+    index = None
+    # set up parser
+    parser = LlamaParse(
+        result_type="markdown"  # "markdown" and "text" are available
+    )
+
+    # use SimpleDirectoryReader to parse our file
+    file_extractor = {".pdf": parser}
+
+    logging.info (f" === *index.py pdf_file_path {pdf_file_path}")
+
+    for filename in os.listdir(pdf_file_path):
+        try: 
+            if filename == '.DS_Store' or not filename.lower().endswith('.pdf'):
+                logging.debug(f"Skipping file: {filename}")
+                continue
+
+            file_path = os.path.join(pdf_file_path, filename)
+
+
+            if not os.path.exists(PERSIST_DIR):
+                # load the documents and create the index
+                documents = SimpleDirectoryReader(
+                        input_files=[file_path],
+                        file_extractor=file_extractor
+                    ).load_data()
+        
+                index = VectorStoreIndex.from_documents(documents)
+
+                # store it for later
+                index.storage_context.persist(persist_dir=PERSIST_DIR)
+            else:
+                # load the existing index
+                storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
+                index = load_index_from_storage(storage_context)
+
+            logging.info(f" === *index.py upload data to \nIndex: {index} ;  \nPERSIST_DIR: {PERSIST_DIR} ; \nSource File: {file_path}")
+            
+
+        except Exception as e:
+            logging.exception(e)
+            continue
+
+
+    return index
+
+    
+
+def retrieve_from_index(prompt, index ):
+
+    
    
-    documents = SimpleDirectoryReader(pdf_file_path).load_data()
-    index = VectorStoreIndex.from_documents(documents)
-    query_engine = index.as_query_engine()
-    response = query_engine.query("summary of the paper")
-    print( " == summary ", response)
 
     # check if storage already exists
+
     PERSIST_DIR = "./storage"
     if not os.path.exists(PERSIST_DIR):
         # load the documents and create the index
@@ -41,11 +125,13 @@ def load_file_saved_vector_to_local_storage ():
         storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
         index = load_index_from_storage(storage_context)
 
-    # Either way we can now query the index
-    query_engine = index.as_query_engine()
-    response = query_engine.query("What did the author do growing up?")
-    print(response)
 
+    query_engine = index.as_query_engine()
+    response = query_engine.query("summary of constitution.pdf")
+
+    logging.info( " == summary ", response)
+   
+    
 # Function to build index over data file
 def rag_lli(prompt="provide summary"):
     # Load documents from the specified path
@@ -65,5 +151,5 @@ def rag_lli(prompt="provide summary"):
 
 
 if __name__ =="__main__" :
-    prompt = "sumerize the insurance document"
-    rag_lli(prompt)
+    prompt ="summerize constitution.pdf"
+    upload_to_index (pdf_file_path = pdf_file_path, storage_dir = PERSIST_DIR)
