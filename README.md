@@ -49,3 +49,6 @@ runs from (port=8079, grpc_port=50050)
 # Return objects: API Specification has details
 1. Note:  sample error object for upload ![alt text](image.png)
    
+
+# LlamaIndex
+https://docs.llamaindex.ai/en/stable/understanding/querying/querying/
