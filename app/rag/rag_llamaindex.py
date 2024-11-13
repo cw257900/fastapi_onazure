@@ -188,7 +188,7 @@ def get_response_with_metadata(response, query):
 
 def query_index_synthesizer (index, query): 
 
-    similarity_top_k = 1
+    similarity_top_k = 2
     # configure retriever
     retriever = VectorIndexRetriever(
         index=index,
@@ -222,12 +222,12 @@ def query_index_synthesizer (index, query):
 
   
 if __name__ =="__main__" :
-    #upload_to_index( pdf_file_path, persist_dir=PERSIST_DIR)
+    upload_to_index( pdf_file_path, persist_dir=PERSIST_DIR)
    
-    #query = "summary of what_is_a_constitution.pdf"
-    #query = "Tell me about constitution "
+    #query = "summarize constitution.pdf"
+    query = "What's constitution.pdf"
     #query = "Key Insights  of constitution.pdf"
-    query = "What's article 4 from contitution.pdf"
+    #query = "What's article 4 from contitution.pdf"
   
     storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
     index = load_index_from_storage(storage_context)
