@@ -1,7 +1,7 @@
 import os 
 import sys
 import logging
-
+import json
 import shutil
 
 from llama_index.core import Document
@@ -43,6 +43,7 @@ logging.basicConfig(
         logging.StreamHandler()  # This ensures output to console
     ]
 )
+  
 
 def refresh_index( storage_dir=PERSIST_DIR):
     """
@@ -186,9 +187,22 @@ def get_response_with_metadata(response, query):
         
     return node.metadata, "\n".join(results)
 
-def query_index_synthesizer (index, query): 
+from pydantic import BaseModel
+from typing import Optional, Dict, Any
 
-    similarity_top_k = 2
+class ResponseObject(BaseModel):
+    summary: str
+    metadata: Dict[str, Any] 
+    article_content: Optional[str] 
+
+
+
+def query_index_synthesizer ( query, top_k =1): 
+
+    storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
+    index = load_index_from_storage(storage_context)
+
+    similarity_top_k = 1
     # configure retriever
     retriever = VectorIndexRetriever(
         index=index,
@@ -213,13 +227,21 @@ def query_index_synthesizer (index, query):
 
     # query
     response = query_engine.query(query)
-    logging.info( f" \n=== *llamaindex.py {query} with top {similarity_top_k} :\n{response} ")
+    # logging.info( f" \n=== *llamaindex.py {query} with top {similarity_top_k} :\n{response} ")
     
     
     metadata, content_text = get_response_with_metadata(response, query)
-    logging.info (f" \n=== result details for {query} \n {metadata} \n{content_text}")
+    # logging.info (f" \n=== result details for {query} \n {metadata} \n{content_text}")
 
+    json_objects = []
 
+    json_objects.append({
+            "summary": response.response,
+            "metadata":metadata,
+            "article_content": content_text
+        })
+
+    return json_objects
   
 if __name__ =="__main__" :
     upload_to_index( pdf_file_path, persist_dir=PERSIST_DIR)
@@ -229,8 +251,8 @@ if __name__ =="__main__" :
     #query = "Key Insights  of constitution.pdf"
     #query = "What's article 4 from contitution.pdf"
   
-    storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
-    index = load_index_from_storage(storage_context)
+    #storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
+    #index = load_index_from_storage(storage_context)
     #response = query_index (index, query)
-    response = query_index_synthesizer(index, query)
+    response = query_index_synthesizer(query)
  

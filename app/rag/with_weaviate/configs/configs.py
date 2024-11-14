@@ -35,10 +35,11 @@ blob_name = "rag/data/constitution.pdf"
 blob_path = "rag/data"
 logging.info (" === configs.py - blob_name for azure: {}".format(blob_name))
 
-#chunk_size=5000
-#chunk_overlap=300
-#SUPPORTED_FILE_TYPES = ['.pdf']
-#BATCH_SIZE = 100 
+#parsing files
+chunk_size=5000
+chunk_overlap=300
+SUPPORTED_FILE_TYPES = ['.pdf']
+BATCH_SIZE = 100 
 
 
 
