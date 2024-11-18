@@ -14,7 +14,12 @@ logging.basicConfig(
     ]
 )
 
+# LlamaIndex
+LLAMAINDEX_PERSISTENCE_PATH ="./llamaindex_data"
 
+
+
+#weaviate and azure 
 class_name = "PDF_COLLECTION"
 WEAVIATE_STORE_DESCRIPTION="collections"
 WEAVIATE_PERSISTENCE_PATH="./weaviate_data"
@@ -25,18 +30,16 @@ WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")  # Weaviate API key
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")  # WEAVIATE_URL
 AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 AZURE_CONTAINER_NAME =  "sacontainer" 
+AZURE_WATCH_DIRECTORY = "rag/data"
+blob_name = "rag/data/constitution.pdf"
+blob_path = "rag/data"
+logging.info (" === configs.py - blob_name for azure: {}".format(blob_name))
 
+#parsing files
 chunk_size=5000
 chunk_overlap=300
 SUPPORTED_FILE_TYPES = ['.pdf']
 BATCH_SIZE = 100 
-
-
-WATCH_DIRECTORY = "rag/data"
-print (" configs.py - variable WATCH_DIRECTORY: ", WATCH_DIRECTORY )
-blob_name = "rag/data/constitution.pdf"
-blob_path = "rag/data"
-logging.info (" === configs.py - variable blob_name used for azure: {}".format(blob_name))
 
 
 
@@ -45,11 +48,8 @@ def find_data_folder(base_path, folder_name="data"): #find the path of "data" fo
     for root, dirs, files in os.walk(base_path):
         if folder_name in dirs:
             return os.path.join(root, folder_name)
-        
-
 pdf_file_path = find_data_folder (base_path, "data") #this variable = None, means it couldn't fine "data" folder
-
-logging.info (" === configs.py - variable pdf_file_path used for local file under /data : {}".format(pdf_file_path))
+logging.info (" === configs.py - pdf_file_path : {}".format(pdf_file_path))
 
 ERROR_CODES = {
     "R001": { #retrieve

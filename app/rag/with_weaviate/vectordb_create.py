@@ -219,6 +219,8 @@ async def upsert_chunks_to_store(
         try: 
             file_path = os.path.join(pdf_file_path, filename)
 
+            logging.info (f"\n === file_path: {file_path} \n")
+            
             # Check if the current file is a PDF
             if os.path.isfile(file_path) and file_path.lower().endswith('.pdf') and  not filename.startswith('.') :
                 
@@ -280,7 +282,7 @@ async def upsert_chunks_to_store(
     response["message"].append(f"{object_count} already in {url}")
 
     print (response)
-    logging.info(f" === *created.py - url: from upsert_single_file_to_store.py {url}")
+    logging.info(f" === *created.py - url:  {url}")
     logging.info(f" === *created.py - object_count: {object_count}")
 
     # The Python client uses standard HTTP requests, which are automatically closed after the response is received.
@@ -291,13 +293,12 @@ async def upsert_chunks_to_store(
  
 
 
-
 async def main ():   
     pdf_file_path=configs.pdf_file_path
     client = utils.get_client()
     class_name = utils.class_name
     status = await upsert_chunks_to_store(pdf_file_path, client, class_name)
-    logging.info("\nDocument Processing Status: for {pdf_file_path}\n%s", 
+    logging.info(f"\nDocument Processing Status: for {pdf_file_path}\n%s", 
                     json.dumps(status, indent=2, ensure_ascii=False))
     
 # Entry point

@@ -38,7 +38,7 @@ def create_client():
         grpc={"host": WEAVIATE_HOST, "port": WEAVIATE_GRPC_PORT, "secure": False}
     )
     """
-    #client = weaviate.connect_to_local( headers = {"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
+    client = weaviate.connect_to_local( headers = {"X-OpenAI-Api-Key": configs.OPENAI_API_KEY})
     """
     client = weaviate.use_async_with_embedded (
         version="1.26.1",
@@ -48,15 +48,16 @@ def create_client():
     )
     """
     
-  
+    """
     client = weaviate.connect_to_embedded(
-        version="latest",
+        version="1.27.3",
         persistence_data_path=configs.WEAVIATE_PERSISTENCE_PATH,
         headers= headers,
         environment_variables={
             "ENABLE_MODULES": "text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai",
         }
     )
+    """
  
     logging.info (" === vectore_stores.py - embeded client initated {}".format(client))
     
