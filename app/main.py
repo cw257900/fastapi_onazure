@@ -8,7 +8,8 @@ import sys
 import os
 import json
 import asyncio
-from datetime import datetime
+
+from datetime import datetime, timezone
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -41,7 +42,7 @@ class APIResponse:
             "status": "success",
             "message": message,
             "data": data,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
     @staticmethod
@@ -53,22 +54,17 @@ class APIResponse:
             "timestamp": datetime.utcnow().isoformat()
         }
 
-@app.get("/", 
-         response_model=Dict[str, str],
-         summary="API Root",
-         description="Returns available API endpoints information")
+@app.get("/", response_model=Dict[str, str],summary="API Root", description="Returns available API endpoints information")
 async def read_root() -> Dict[str, str]:
     """
     Root endpoint providing API usage information.
     """
     return {
         "info": "RAG API Service",
-        "endpoints": {
-            "/prompt/{ask}": "Query using LlamaIndex",
-            "/query/{ask}": "Direct retrieval from Weaviate",
-            "/upload": "Upload data to the system",
-            "/cleanup": "Remove all data from the system"
-        }
+        "/prompt/{ask}": "Query using LlamaIndex",
+        "/query/{ask}": "Direct retrieval from Weaviate",
+        "/upload": "Upload data to the system",
+        "/cleanup": "Remove all data from the system"
     }
 
 @app.get("/upload",
@@ -113,10 +109,10 @@ async def cleanup() -> JSONResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@app.get("/prompt/{ask}",
+@app.get("/prompt/{prompt}",
          summary="LlamaIndex Query",
          description="Query the system using LlamaIndex")
-async def read_llamaindex(ask: str) -> JSONResponse:
+async def read_llamaindex(prompt: str, top_k=1) -> JSONResponse:
     """
     Endpoint to query the system using LlamaIndex.
     
@@ -127,7 +123,7 @@ async def read_llamaindex(ask: str) -> JSONResponse:
         JSONResponse: The query response
     """
     try:
-        response = await run_in_threadpool(rag_llamaindex.query_index_synthesizer, ask, top_k=1)
+        response = await run_in_threadpool(rag_llamaindex.query_index_synthesizer, prompt, top_k)
 
         if response is None:
             return JSONResponse(
@@ -136,7 +132,7 @@ async def read_llamaindex(ask: str) -> JSONResponse:
             )
         
         return JSONResponse(
-            content=APIResponse.success(str(response), "Query processed successfully"),
+            content=APIResponse.success(response, "Query processed successfully"),
             status_code=status.HTTP_200_OK
         )
     except Exception as e:

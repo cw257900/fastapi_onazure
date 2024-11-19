@@ -13,7 +13,9 @@ pip install llama-index-llms-openai
 pip install llama-index-llms-replicate
 pip install llama-index-embeddings-openai #(need openai key)
 pip install llama-index-core llama-index-readers-file llama-index-llms-ollama 
-pip install llama-index-embeddings-huggingface #(local embedding to save cost)
+pip install llama-index-embeddings-huggingface 
+pip install llama-index-vector-stores-weaviate
+
 
 pip freeze > requirements.txt
 

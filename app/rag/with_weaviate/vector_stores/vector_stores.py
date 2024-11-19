@@ -58,7 +58,6 @@ def create_client():
         }
     )
     """
- 
     logging.info (" === vectore_stores.py - embeded client initated {}".format(client))
     
 

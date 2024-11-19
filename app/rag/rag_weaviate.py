@@ -118,12 +118,8 @@ def rag_retrieval (prompt,client=client, limit=3, alpha=0.75 ):
 if __name__ =="__main__" :
     prompt = "sumerize the insurance document"
     #rag_retrieval("What is a Constitution? Principles and Concepts", limit=3, alpha=0.75)
-    # response = requests.get("http://localhost:8079/v1/schema")
-    
-    # print(response.json())
-  
-    asyncio.run(rag_upload(client))
 
+    asyncio.run(rag_upload(client))
     utils.get_total_object_count()
     
     #response = requests.get("http://localhost:8079/v1/schema")
