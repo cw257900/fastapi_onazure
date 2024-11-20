@@ -158,6 +158,49 @@ def query_llamaindex(
 
 
 if __name__ == "__main__":
-    query = "What are the key principles outlined in Constitution.pdf?"
-    response = query_llamaindex(query, top_k=2)
-    print(json.dumps(response, indent=4))
+    #query = "What are the key principles outlined in Constitution.pdf?"
+    #response = query_llamaindex(query, top_k=2)
+
+    persist_dir=configs.LLAMAINDEX_PERSISTENCE_PATH
+    top_k = 2
+
+    if not os.path.exists(persist_dir):
+        documents = SimpleDirectoryReader(pdf_file_path).load_data()
+        index = VectorStoreIndex.from_documents(documents)
+        index.storage_context.persist(persist_dir)
+    else:
+        storage_context = StorageContext.from_defaults(persist_dir=persist_dir)
+        index = load_index_from_storage(storage_context)
+
+    retriever = VectorIndexRetriever(index=index, similarity_top_k=top_k, return_metadata=True )
+    response_synthesizer = get_response_synthesizer(response_mode=ResponseMode.SIMPLE_SUMMARIZE)
+
+
+    
+    query_engine = RetrieverQueryEngine(
+        retriever=retriever,
+        response_synthesizer=response_synthesizer,
+        node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=0.5)],
+    )
+   
+    # Define your query and add filters during query execution
+    query = "anything about connie?"
+    specific_file_name = "what_is_constifitution.pdf"
+
+    # Apply filter during query execution if supported
+    response = query_engine.query(query)
+    summary = response.response.replace("Response 1: ", "")
+
+    results = [
+        {
+            "Prompt": query,
+            "top-k": top_k,
+            "summary": summary,
+            "metadata": node.metadata,
+            "content": utils.dynamic_format_text(node.text),
+        }
+        for node in response.source_nodes
+    ]
+
+    logging.info(f"Query Results: {json.dumps(results, indent=4)}")
+
