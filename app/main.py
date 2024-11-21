@@ -87,27 +87,28 @@ async def upload(
         JSONResponse: The upload response
     """
     try:
+        
         if type == "weaviate":
             response = await rag_weaviate.rag_upload()
         elif type == "llamaindex":
-            response = rag_llamaindex.upload_to_llamaindex(pdf_file_path, persist_dir=PERSIST_DIR)
+            #response = await rag_llamaindex.upload_to_llamaindex()
+            response = await rag_llamaindex.upload_blob_to_llamaindex()
             response = {"index_summary": str(response)} #convert response to str 
         else:
             raise ValueError(f"Invalid type specified: {type}")
 
-        logger.info(f"Upload to {type.capitalize()} completed successfully: {response}")
+        logger.info(f" === main.py - Upload to {type} completed successfully: {response}")
         return JSONResponse(
             content=APIResponse.success(response, f"Upload to {type} completed successfully"),
             status_code=status.HTTP_200_OK
         )
     except Exception as e:
-        logger.error(f"Upload to {type} failed: {str(e)}", exc_info=True)
+        logger.error(f" === main.py - Upload to {type} failed: {str(e)}", exc_info=True)
         return JSONResponse(
             content=APIResponse.error(f"Upload failed: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-        
 
 @app.get(
     "/cleanup",
@@ -163,7 +164,8 @@ async def query_system(
     try:
       
         if type == "llamaindex":
-            response = await run_in_threadpool(rag_llamaindex.query_llamaindex, ask, top_k)
+            response = await rag_llamaindex.query_llamaindex(ask, top_k)
+            
         elif type == "weaviate":
             response = rag_weaviate.rag_retrieval(ask, limit=top_k)
         else:
@@ -184,7 +186,8 @@ async def query_system(
             status_code=status.HTTP_200_OK
         )
     except Exception as e:
-        logger.error(f"{type.capitalize()} query failed: {str(e)}", exc_info=True)
+        logger.error(f" === main.py - {type} query failed: {str(e)}", exc_info=True)
+        
         return JSONResponse(
             content=APIResponse.error(f"Query failed: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR

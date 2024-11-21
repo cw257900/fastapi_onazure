@@ -33,6 +33,7 @@ AZURE_CONTAINER_NAME =  "sacontainer"
 AZURE_WATCH_DIRECTORY = "rag/data"
 blob_name = "rag/data/constitution.pdf"
 blob_path = "rag/data"
+temp_folder_for_blob = "tmp/data"
 logging.info (" === configs.py - blob_name for azure: {}".format(blob_name))
 
 #parsing files

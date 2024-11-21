@@ -45,3 +45,17 @@ def parse_pdf_with_page_numbers(file_path):
 
     pdf.close()
     return documents
+
+
+# configure response synthesizer with a custom handler for metadata
+def get_response_with_metadata(response):
+    # Iterate through each result and include page number
+    results = []
+    
+    for node in response.source_nodes:
+        
+        page_number = node.metadata.get('page_number')  # get page number from metadata
+        text = node.text
+        results.append(f"(Page {page_number}): {text}")
+        
+    return node.metadata, "\n".join(results)
