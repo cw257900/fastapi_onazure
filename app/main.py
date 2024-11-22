@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, Query, status
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 from typing import Dict, Any, Optional
@@ -6,12 +6,18 @@ import uvicorn
 import logging
 import sys
 import os
-import json
-import asyncio
+
 from datetime import datetime
+
+
+from datetime import datetime, timezone
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from rag.with_weaviate.configs import configs
+pdf_file_path = configs.pdf_file_path
+PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
+os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
 
 from rag import rag_llamaindex, rag_weaviate
 
@@ -41,7 +47,7 @@ class APIResponse:
             "status": "success",
             "message": message,
             "data": data,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
     @staticmethod
@@ -50,129 +56,157 @@ class APIResponse:
             "status": "error",
             "message": message,
             "status_code": status_code,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
-@app.get("/", 
-         response_model=Dict[str, str],
-         summary="API Root",
-         description="Returns available API endpoints information")
+@app.get("/", response_model=Dict[str, str],summary="API Root", description="Returns available API endpoints information")
 async def read_root() -> Dict[str, str]:
     """
     Root endpoint providing API usage information.
     """
     return {
         "info": "RAG API Service",
-        "endpoints": {
-            "/prompt/{ask}": "Query using LlamaIndex",
-            "/query/{ask}": "Direct retrieval from Weaviate",
-            "/upload": "Upload data to the system",
-            "/cleanup": "Remove all data from the system"
-        }
+        "/query/{ask}": "Direct retrieval: type=weaviate or llamaindex",
+        "/upload": "Upload data to the system: type=weaviate or llamaindex",
+        "/cleanup": "Remove all data from the system: type=weaviate or llamaindex"
     }
 
 @app.get("/upload",
          summary="Upload Data",
-         description="Upload data to the RAG system")
-async def upload() -> JSONResponse:
+         description="Upload data to the RAG system using Weaviate or LlamaIndex")
+async def upload(
+    type: str = Query(..., pattern="^(weaviate|llamaindex)$", description="The system to upload data to: weaviate or llamaIndex")
+) -> JSONResponse:
     """
     Upload endpoint to load data into the system.
+
+    Args:
+        type (str): The system to upload data to ("weaviate" or "llamaIndex")
+
+    Returns:
+        JSONResponse: The upload response
     """
     try:
-        response = await rag_weaviate.rag_upload()
-        logger.info(f"Upload completed: {response}")
+        
+        if type == "weaviate":
+            response = await rag_weaviate.rag_upload()
+        elif type == "llamaindex":
+            #response = await rag_llamaindex.upload_to_llamaindex()
+            response = await rag_llamaindex.upload_blob_to_llamaindex()
+            response = {"index_summary": str(response)} #convert response to str 
+        else:
+            raise ValueError(f"Invalid type specified: {type}")
+
+        logger.info(f" === main.py - Upload to {type} completed successfully: {response}")
         return JSONResponse(
-            content=APIResponse.success(response, "Upload completed successfully"),
+            content=APIResponse.success(response, f"Upload to {type} completed successfully"),
             status_code=status.HTTP_200_OK
         )
     except Exception as e:
-        logger.error(f"Upload failed: {str(e)}", exc_info=True)
+        logger.error(f" === main.py - Upload to {type} failed: {str(e)}", exc_info=True)
         return JSONResponse(
             content=APIResponse.error(f"Upload failed: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@app.get("/cleanup",
-         summary="Cleanup Data",
-         description="Remove all data from the system")
-async def cleanup() -> JSONResponse:
+
+@app.get(
+    "/cleanup",
+    summary="Cleanup Data",
+    description="Remove all data from the system for the specified type (weaviate or llamaIndex)."
+)
+async def cleanup(type: str = Query(..., pattern="^(weaviate|llamaindex)$")) -> JSONResponse:
     """
-    Cleanup endpoint to remove all data from the system.
+    Cleanup endpoint to remove all data from the system for the specified type.
+    :param type: The type of cleanup to perform ("weaviate" or "llamaIndex").
     """
     try:
-        response = await rag_weaviate.rag_cleanup()
-        logger.info(f"Cleanup completed: {response}")
+        if type == "weaviate":
+            response = await rag_weaviate.rag_cleanup()
+        elif type == "llamaindex":
+            response = await rag_llamaindex.cleanup()
+        else:
+            raise ValueError(f"Invalid cleanup type: {type}")
+
+        logger.info(f"Cleanup completed for {type}: {response}")
         return JSONResponse(
-            content=APIResponse.success(response, "Cleanup completed successfully"),
+            content=APIResponse.success(response, f"Cleanup for {type} completed successfully"),
             status_code=status.HTTP_200_OK
         )
     except Exception as e:
-        logger.error(f"Cleanup failed: {str(e)}", exc_info=True)
+        logger.error(f"Cleanup failed for {type}: {str(e)}", exc_info=True)
         return JSONResponse(
-            content=APIResponse.error(f"Cleanup failed: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR),
+            content=APIResponse.error(f"Cleanup failed for {type}: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@app.get("/prompt/{ask}",
-         summary="LlamaIndex Query",
-         description="Query the system using LlamaIndex")
-async def read_llamaindex(ask: str) -> JSONResponse:
+
+@app.get("/query/{ask}",
+         summary="Query the system",
+         description="Query the system using weaviate or llamaindex")
+async def query_system(
+    ask: str,
+    type: str = Query(..., pattern="^(weaviate|llamaindex)$", description="The system to query: weaviate or llamaIndex"),
+    top_k: int = Query(1, description="Number of top results to retrieve ")
+) -> JSONResponse:
     """
-    Endpoint to query the system using LlamaIndex.
-    
+    Consolidated endpoint for querying the system using Weaviate or LlamaIndex.
+
     Args:
         ask (str): The query string
-        
+        type (str): The system to query ("weaviate" or "llamaIndex")
+        top_k (int): Top results to retrieve for LlamaIndex queries
+        limit (int): Number of results to retrieve for Weaviate queries
+
     Returns:
         JSONResponse: The query response
     """
     try:
-        response = await run_in_threadpool(rag_llamaindex.query_index_synthesizer, ask, top_k=1)
+      
+        if type == "llamaindex":
+            response = await rag_llamaindex.query_llamaindex(ask, top_k)
+            
+        elif type == "weaviate":
+            response = rag_weaviate.rag_retrieval(ask, limit=top_k)
+        else:
+            raise ValueError(f"Invalid type specified: {type}")
 
-        if response is None:
+        if not response:
             return JSONResponse(
                 content=APIResponse.error("No response generated", status.HTTP_404_NOT_FOUND),
                 status_code=status.HTTP_404_NOT_FOUND
             )
         
+        # Serialize the response to make it JSON-compatible
+        serialized_response = serialize_response(response)
+        
+        logger.info(f"{type.capitalize()} query completed for: {ask}")
         return JSONResponse(
-            content=APIResponse.success(str(response), "Query processed successfully"),
+            content=APIResponse.success(serialized_response, f"{type.capitalize()} query processed successfully"),
             status_code=status.HTTP_200_OK
         )
     except Exception as e:
-        logger.error(f"LlamaIndex query failed: {str(e)}", exc_info=True)
+        logger.error(f" === main.py - {type} query failed: {str(e)}", exc_info=True)
+        
         return JSONResponse(
             content=APIResponse.error(f"Query failed: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@app.get("/query/{ask}",
-         summary="Weaviate Query",
-         description="Direct retrieval from Weaviate")
-async def retrieve(ask: str, limit: int = 2) -> JSONResponse:
+
+def serialize_response(response):
     """
-    Endpoint for direct retrieval from Weaviate.
-    
-    Args:
-        ask (str): The query string
-        limit (int): Maximum number of results to return
-        
-    Returns:
-        JSONResponse: The retrieval results
+    Recursively converts datetime objects in the response to ISO format strings.
     """
-    try:
-        indexed_object = rag_weaviate.rag_retrieval(ask, limit=limit)
-        logger.info(f"Retrieval completed for query: {ask}")
-        return JSONResponse(
-            content=APIResponse.success(indexed_object, "Retrieval completed successfully"),
-            status_code=status.HTTP_200_OK
-        )
-    except Exception as e:
-        logger.error(f"Weaviate retrieval failed: {str(e)}", exc_info=True)
-        return JSONResponse(
-            content=APIResponse.error(f"Retrieval failed: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR),
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    if isinstance(response, dict):
+        return {key: serialize_response(value) for key, value in response.items()}
+    elif isinstance(response, list):
+        return [serialize_response(item) for item in response]
+    elif isinstance(response, datetime):
+        return response.isoformat()
+    else:
+        return response
+
 
 async def main():
     """

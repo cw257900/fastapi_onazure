@@ -97,6 +97,7 @@ def query(query_text: str, client, class_name: str = class_name, limit: int =2, 
         None
 
 
+
 # Sample function to use gql_getSingleObjectById
 def get_query_object_by_id(client, uuid):
     # Replace {uuid} in the query with the actual UUID value
@@ -125,7 +126,6 @@ def get_hybridsearch_withLimits(client, text, limit):
 
     result = client.query.raw(query)
     return result
-
 
 
 def retrieve_semantic_vector_search():
@@ -182,7 +182,6 @@ def main():
             logging.info (f" === *retrieve.py main index {idx}")
             logging.info (f" === *retrieve.py main json_object {json_object}")
             logging.info (" === *retrieve.py end")
-
 
 # Call the main function
 if __name__ == "__main__":

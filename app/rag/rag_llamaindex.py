@@ -1,258 +1,261 @@
-import os 
+import os
 import sys
 import logging
+import traceback
 import json
+import asyncio
+from pathlib import Path
 import shutil
+from typing import Any, Dict, List, Optional
 
-from llama_index.core import Document
-import fitz  # PyMuPDF for PDF parsing
+
+
+from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import ContainerClient
+from azure.storage.blob.aio import BlobClient
+
+# LlamaIndex imports
 from llama_parse import LlamaParse
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import (
-    Settings,
-    get_response_synthesizer,
     VectorStoreIndex,
     SimpleDirectoryReader,
     StorageContext,
     load_index_from_storage,
+    get_response_synthesizer,
 )
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.postprocessor import SimilarityPostprocessor
-from llama_index.core.data_structs import Node
-from llama_index.core.schema import NodeWithScore
 from llama_index.core.response_synthesizers import ResponseMode
-from llama_index.core import get_response_synthesizer
 
+# Suppress warnings
 import warnings
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Local imports
+from with_weaviate.chunking import chunking_recursiveCharacterTextSplitter as doc_chunks 
+from with_weaviate.utils import utils_llamaindex as utils
 from with_weaviate.configs import configs
+# Global variables
 pdf_file_path = configs.pdf_file_path
 PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
 os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+blob_path = configs.blob_path
+blob_name = configs.blob_name
+container_name = configs.AZURE_CONTAINER_NAME
+connection_string = configs.AZURE_STORAGE_CONNECTION_STRING
 
-
-# Configure logging for development
+# Configure logging
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.INFO,  # Changed from WARNING to INFO
-    handlers=[
-        logging.StreamHandler()  # This ensures output to console
-    ]
+    level=logging.INFO,
+    handlers=[logging.StreamHandler()]
 )
-  
 
-def refresh_index( storage_dir=PERSIST_DIR):
+
+async def cleanup(storage_dir: str = PERSIST_DIR) -> bool:
     """
-    Force refresh the index by deleting existing storage and creating new index.
-    
+    Cleans up the storage directory to refresh the index.
+
     Args:
-        pdf_file_path (str): Path to directory containing PDF files
-        storage_dir (str): Directory to store the index
-        
+        storage_dir (str): Directory to store the index.
+
     Returns:
-        VectorStoreIndex: New document index or None if operation fails
+        bool: True if cleanup is successful, False otherwise.
     """
-    # Remove existing storage if it exists
     if os.path.exists(storage_dir):
         try:
             shutil.rmtree(storage_dir)
             logging.info(f"Removed existing index storage at {storage_dir}")
         except Exception as e:
-            logging.exception(f"Error removing existing storage: {str(e)}")
-            return None
-    
-    # Create new index
+            logging.exception(f"Error removing storage: {str(e)}")
+            return False
     return True
 
+async def upload_blob_to_llamaindex (storage_dir: str = PERSIST_DIR) -> Optional[VectorStoreIndex]:
+    
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    container_client = blob_service_client.get_container_client(container_name)
+           
+    # List blobs under the specified prefix
+    blob_list = container_client.list_blobs(name_starts_with=blob_path)
 
-def upload_to_index ( pdf_file_path, persist_dir=PERSIST_DIR) :
+    # Create a temporary file with the same name as the original blob file
+    temp_dir = os.getcwd()
+    temp_dir = os.path.join(temp_dir, configs.temp_folder_for_blob)
+              
+    for blob in blob_list:
+        temp_pdf_path = None  # Define it inside the loop so it resets for each blob
+        try:
+                    
+            logging.info(f"\n\n === *index.py - Processing blob: {blob.name} \n")
+                    
+            blob_client = container_client.get_blob_client(blob.name)
+            blob_data = blob_client.download_blob().readall() 
 
-    index = None
-    # set up parser
-    parser = LlamaParse(
-        result_type="markdown"  # "markdown" and "text" are available
-    )
-
-    # use SimpleDirectoryReader to parse our file
-    file_extractor = {".pdf": parser}
-
-    logging.info (f" === *index.py pdf_file_path {pdf_file_path}")
-
-    for filename in os.listdir(pdf_file_path):
-        try: 
-            if filename == '.DS_Store' or not filename.lower().endswith('.pdf'):
-                logging.debug(f"Skipping file: {filename}")
-                continue
-
-            file_path = os.path.join(pdf_file_path, filename)
-
-            if not os.path.exists(PERSIST_DIR):
-                # load the documents and create the index
+            # Extract the original file name from the blob name
+            original_filename = os.path.basename(blob.name)
                 
-                documents = SimpleDirectoryReader(
-                        input_files=[file_path],
-                        file_extractor=file_extractor
-                    ).load_data()
-                
-                #documents = parse_pdf_with_page_numbers(file_path)
-                index = VectorStoreIndex.from_documents(documents)
-
-                # store it for later
-                index.storage_context.persist(persist_dir=PERSIST_DIR)
-            else:
-                # load the existing index
-                storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
-                index = load_index_from_storage(storage_context)
-
-            logging.info(f" === *index.py upload data to \nIndex: {index} ;  \nPERSIST_DIR: {PERSIST_DIR} ; \nSource File: {file_path}")
+                    
+           
             
+            # Create the directory, ignoring if it already exists
+            os.makedirs(temp_dir, exist_ok=True)
+            temp_pdf_path = os.path.join(temp_dir, original_filename)  # Full path with original filename
+
+            with open(temp_pdf_path, 'wb') as temp_pdf:
+                temp_pdf.write(blob_data)
+                logging.info(f" === *index.py uploading blob - Temporary PDF saved to: {temp_pdf}")
+
         except Exception as e:
-            logging.exception(e)
-            continue
+            logging.exception (
+                " === index.py - Blob listing or processing error",
+                extra={"error_type": type(e).__name__, "error_message": str(e)},
+                exc_info=True
+            )
+
+    logging.info( f" === *index.py - blobs copied to temp dir - {temp_dir}")
+
+    index = await upload_to_llamaindex(temp_dir)
+
+    # Check if the directory exists before removing it
+    if os.path.exists(temp_dir):
+        shutil.rmtree(temp_dir)
+        logging.info(f" === *index.py - Directory '{temp_dir}' has been removed.")
+    else:
+        logging.info(f" === *index.py - Directory '{temp_dir}' does not exist.")
 
     return index
 
 
-def query_index_check_storage(prompt, index, pdf_file_path=pdf_file_path ,persist_dir=PERSIST_DIR):
-    # check if storage already exists, if not load first
-    if not os.path.exists(PERSIST_DIR):
-        # load the documents and create the index
-        documents = SimpleDirectoryReader(pdf_file_path).load_data()
-        index = VectorStoreIndex.from_documents(documents)
-        # store it for later
-        index.storage_context.persist(persist_dir)
-    else:
-        # load the existing index
-        storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
-        index = load_index_from_storage(storage_context)
+
+async def upload_to_llamaindex(pdf_file_path = pdf_file_path) -> Optional[VectorStoreIndex]:
+    """
+    Uploads data from PDF files to create or update the index.
+
+    Args:
+        pdf_file_path (str): Path to the directory containing PDF files.
+
+    Returns:
+        Optional[VectorStoreIndex]: The created or updated index.
+    """
+    parser = LlamaParse(result_type="markdown")
+    file_extractor = {".pdf": parser}
+    index = None
+
+    logging.info ( f" === *index.py - uploading this folder: {pdf_file_path}")
+
+    for filename in os.listdir(pdf_file_path):
+
+        if filename == '.DS_Store' or not filename.lower().endswith('.pdf'):
+            logging.debug(f" === *index.py - Skipping file: {filename}")
+            continue
+
+        file_path = os.path.join(pdf_file_path, filename)
+
+        try:
+
+            if not os.path.exists(PERSIST_DIR):
+            
+
+                documents = await SimpleDirectoryReader(
+                    input_files=[file_path],
+                    file_extractor=file_extractor
+                ).aload_data()
+
+                # Add page labels to each Document, this mess up query result
+                """ 
+                # this block create similar results as weaviate; the result for summary always ties to page, didn't really provide high level summary
+                labeled_documents = []
+                for idx, doc in enumerate(documents):
+                    doc.metadata["page_label"] = f"Page {idx + 1}"  # Add custom page label
+                    doc.metadata["file_name"] = filename  # Add file name for reference
+                    doc.metadata["file_path"] = file_path  # Add file path for reference
+                    labeled_documents.append(doc)
+                """
+                
+                index = VectorStoreIndex.from_documents(documents)
+                index.storage_context.persist(PERSIST_DIR)
+
+            else:
+                storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
+                index = load_index_from_storage(storage_context)
+                
+
+            logging.info(f" === *index.py - Uploaded data to \nIndex: {index} | \nFile: {file_path} \n")
+
+        except Exception as e:
+            logging.exception(f"Error processing file {filename}: {str(e)}")
+            print(traceback.format_exc())
+            raise
+
+    return index
 
 
-    query_engine = index.as_query_engine()
-    response = query_engine.query(prompt)
+async def query_llamaindex(
+    prompt: str, top_k: int,  persist_dir: str = PERSIST_DIR ) -> List[Dict[str, Any]]:
+    """
+    Queries the index using the synthesizer with metadata.
 
-    logging.info(f" === *index.py - {prompt} \n {response}")
-   
+    Args:
+        prompt (str): The query string.
+        top_k (int): Number of top results to retrieve.
+        pdf_file_path (str): Path to the directory containing PDF files.
+        persist_dir (str): Directory to store the index.
 
-    # Load documents from the specified path
-    documents = SimpleDirectoryReader(pdf_file_path).load_data()
-    
-    # Create the index using the local embedding model , default is openAI's embedding
-    index = VectorStoreIndex.from_documents(documents)
-    
-    # Create a query engine from the index
-    query_engine = index.as_query_engine()
-    
-    # Query the index and print the response
-    response = query_engine.query(prompt)
+    Returns:
+        List[Dict[str, Any]]: List of formatted query results.
+    """
 
-    return response
-
-def query_index (index, query):
-    
-    query_engine = index.as_query_engine()
-    response = query_engine.query(query)
-   
-    logging.info (f" === query_index {query} \n{response} \n")
-    return response
-
-def parse_pdf_with_page_numbers(file_path):
-    documents = []
-    pdf = fitz.open(file_path)  # Open the PDF
-
-    for page_num in range(pdf.page_count):
-        page = pdf[page_num]
-        text = page.get_text()
-        metadata = {
-            "page_number": page_num + 1  # Add page number to metadata
-        }
-        documents.append(Document(text=text, metadata=metadata))
-
-    pdf.close()
-    return documents
-
-# configure response synthesizer with a custom handler for metadata
-def get_response_with_metadata(response, query):
-    # Iterate through each result and include page number
-    results = []
-    
-    for node in response.source_nodes:
+    try : 
+        if not os.path.exists(PERSIST_DIR):
+            #index = await upload_to_llamaindex()
+            index = await upload_blob_to_llamaindex()
+        else:
+            storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
+            index = load_index_from_storage(storage_context)
         
-        page_number = node.metadata.get('page_number')  # get page number from metadata
-        text = node.text
-        results.append(f"(Page {page_number}): {text}")
-        
-    return node.metadata, "\n".join(results)
+        retriever = VectorIndexRetriever(index=index, similarity_top_k=top_k, return_metadata=True)
+        response_synthesizer = get_response_synthesizer(response_mode=ResponseMode.SIMPLE_SUMMARIZE)
 
-from pydantic import BaseModel
-from typing import Optional, Dict, Any
+       # query_engine = index.as_query_engine()
+        query_engine = RetrieverQueryEngine(
+            retriever=retriever,
+            #response_synthesizer=response_synthesizer,  #synthesizer results looks weird
+            node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=0.5)],
+        )
+       
+        response = query_engine.query(prompt)
+        summary = response.response.replace("Response 1: ", "")
 
-class ResponseObject(BaseModel):
-    summary: str
-    metadata: Dict[str, Any] 
-    article_content: Optional[str] 
+        results =[]
+        results = [
+            {
+                "Prompt": prompt,
+                "top-k": top_k,
+                "summary": summary,
+                "metadata": node.metadata,
+                "content": utils.dynamic_format_text(node.text),
+            }
+            for node in response.source_nodes
+        ]
 
+        logging.info(f"Query Results: {json.dumps(results, indent=4)}")
+       
+        return results
 
-
-def query_index_synthesizer ( query, top_k =1): 
-
-    storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
-    index = load_index_from_storage(storage_context)
-
-    similarity_top_k = 1
-    # configure retriever
-    retriever = VectorIndexRetriever(
-        index=index,
-        similarity_top_k=similarity_top_k,
-        return_metadata=True,  # ensures metadata (like page numbers) is included
-    )
-
-    # configure response synthesizer
-    response_synthesizer = get_response_synthesizer(
-        #response_mode=ResponseMode.COMPACT
-        #response_mode=ResponseMode.REFINE
-        #response_mode=ResponseMode.SIMPLE_SUMMARIZE
-        response_mode=ResponseMode.COMPACT_ACCUMULATE
-    )
-
-    # assemble query engine
-    query_engine = RetrieverQueryEngine(
-        retriever=retriever,
-        response_synthesizer=response_synthesizer,
-        node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=0.5)],
-    )
-
-    # query
-    response = query_engine.query(query)
-    # logging.info( f" \n=== *llamaindex.py {query} with top {similarity_top_k} :\n{response} ")
+    except Exception as e: 
+        logging.exception(f" === *index.py Error {str(e)}")
+        print(traceback.format_exc())
+        raise
     
-    
-    metadata, content_text = get_response_with_metadata(response, query)
-    # logging.info (f" \n=== result details for {query} \n {metadata} \n{content_text}")
 
-    json_objects = []
-
-    json_objects.append({
-            "summary": response.response,
-            "metadata":metadata,
-            "article_content": content_text
-        })
-
-    return json_objects
-  
-if __name__ =="__main__" :
-    upload_to_index( pdf_file_path, persist_dir=PERSIST_DIR)
+if __name__ == "__main__":
    
-    #query = "summarize constitution.pdf"
-    query = "What is Article IV?"
-    #query = "Key Insights  of constitution.pdf"
-    #query = "What's article 4 from contitution.pdf"
-  
-    #storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
-    #index = load_index_from_storage(storage_context)
-    #response = query_index (index, query)
-    response = query_index_synthesizer(query)
- 
+    # Define your query and add filters during query execution
+    query = "anything about connie?"
+    specific_file_name = "what_is_constifitution.pdf"
+    upload_blob_to_llamaindex ()

@@ -44,12 +44,10 @@ async def cleanup():
     return response
 
 
-@app.get("/prompt/{ask}")
-async def read_llamindex (ask: str):
+@app.get("/prompt/{prompt}")
+async def read_llamindex (prompt: str):
    
-    response = await run_in_threadpool(rag_llamaindex.query_index_synthesizer, ask, top_k=1)
-
-    print (response)
+    response = await run_in_threadpool(rag_llamaindex.query_index_synthesizer, prompt, top_k=1)
 
     if response is None:
         #logger.warning(f"No response generated for prompt: {ask}")

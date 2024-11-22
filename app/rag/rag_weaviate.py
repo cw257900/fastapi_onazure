@@ -1,15 +1,12 @@
 import sys
 import os
-import json
-import logging
 import asyncio
-import weaviate
-import warnings
-import requests
 import traceback
 
+import warnings
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
+import logging
 # Configure logging for development
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -22,11 +19,10 @@ logging.basicConfig(
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from with_weaviate.configs import configs
-from with_weaviate.vector_stores import vector_stores as vector_store
 from with_weaviate.vectordb_create_blob  import PDFProcessor
+import with_weaviate.vectordb_create as create 
 from with_weaviate.utils import utils, vectordb_cleanup as cleanup
 import with_weaviate.vectordb_retrieve as retrive 
-import with_weaviate.vectordb_create as create 
 from with_weaviate.utils import utils
 
 class_name = configs.class_name
@@ -40,7 +36,7 @@ async def rag_upload_from_blob(client=client):
 
     return response 
 
-async def rag_cleanup (client =client ):
+async def rag_cleanup (client =client):
     response = {
         "status": True,  # Initial status is set to True
         #"error": ['None']      # Initialize error as an empty list
@@ -69,14 +65,12 @@ async def rag_upload (client=client):
 # Function to build index over data file
 def rag_retrieval (prompt,client=client, limit=3, alpha=0.75 ):
 
-    json_list = []
     logging.info (" === rag_weaviate.py retrieval that rag asking {}".format(prompt))
     response = retrive.query(prompt, client, limit=limit, alpha=alpha)
   
     if isinstance(response, dict):
         if 'error' in response:
-            json_list = response
-
+        
             logging.error (f" === rag_weaviate.py {response}")
             return response
 
@@ -118,12 +112,8 @@ def rag_retrieval (prompt,client=client, limit=3, alpha=0.75 ):
 if __name__ =="__main__" :
     prompt = "sumerize the insurance document"
     #rag_retrieval("What is a Constitution? Principles and Concepts", limit=3, alpha=0.75)
-    # response = requests.get("http://localhost:8079/v1/schema")
-    
-    # print(response.json())
-  
-    asyncio.run(rag_upload(client))
 
+    asyncio.run(rag_upload(client))
     utils.get_total_object_count()
     
     #response = requests.get("http://localhost:8079/v1/schema")
