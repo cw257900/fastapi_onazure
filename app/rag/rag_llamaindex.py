@@ -8,8 +8,6 @@ from pathlib import Path
 import shutil
 from typing import Any, Dict, List, Optional
 
-
-
 from azure.storage.blob import BlobServiceClient
 from azure.storage.blob import ContainerClient
 from azure.storage.blob.aio import BlobClient
@@ -131,7 +129,6 @@ async def upload_blob_to_llamaindex (storage_dir: str = PERSIST_DIR) -> Optional
     return index
 
 
-
 async def upload_to_llamaindex(pdf_file_path = pdf_file_path) -> Optional[VectorStoreIndex]:
     """
     Uploads data from PDF files to create or update the index.
@@ -159,8 +156,6 @@ async def upload_to_llamaindex(pdf_file_path = pdf_file_path) -> Optional[Vector
         try:
 
             if not os.path.exists(PERSIST_DIR):
-            
-
                 documents = await SimpleDirectoryReader(
                     input_files=[file_path],
                     file_extractor=file_extractor
@@ -184,7 +179,6 @@ async def upload_to_llamaindex(pdf_file_path = pdf_file_path) -> Optional[Vector
                 storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
                 index = load_index_from_storage(storage_context)
                 
-
             logging.info(f" === *index.py - Uploaded data to \nIndex: {index} | \nFile: {file_path} \n")
 
         except Exception as e:
@@ -258,4 +252,4 @@ if __name__ == "__main__":
     # Define your query and add filters during query execution
     query = "anything about connie?"
     specific_file_name = "what_is_constifitution.pdf"
-    upload_blob_to_llamaindex ()
+    asyncio.run(upload_blob_to_llamaindex ())

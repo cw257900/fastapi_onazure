@@ -9,13 +9,15 @@ source .venv/bin/activate
 
 pip install "fastapi[all]"
 pip install sentence-transformers  #(sensence-transformer doesn't work with python3.13)
+pip install llama-parse
 pip install llama-index-llms-openai
 pip install llama-index-llms-replicate
 pip install llama-index-embeddings-openai #(need openai key)
 pip install llama-index-core llama-index-readers-file llama-index-llms-ollama 
 pip install llama-index-embeddings-huggingface 
 pip install llama-index-vector-stores-weaviate
-
+pip install azure-storage-blob
+pip install langchain_community
 
 pip freeze > requirements.txt
 
