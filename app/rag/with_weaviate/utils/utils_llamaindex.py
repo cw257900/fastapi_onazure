@@ -1,5 +1,5 @@
 import re
-import fitz  # PyMuPDF for PDF parsing
+#import fitz  # PyMuPDF for PDF parsing
 from llama_index.core import Document
 
 def dynamic_format_text(text):
@@ -31,6 +31,7 @@ def dynamic_format_text(text):
     return formatted_text
 
 #not used
+""" 
 def parse_pdf_with_page_numbers(file_path):
     documents = []
     pdf = fitz.open(file_path)  # Open the PDF
@@ -45,7 +46,7 @@ def parse_pdf_with_page_numbers(file_path):
 
     pdf.close()
     return documents
-
+"""
 
 # configure response synthesizer with a custom handler for metadata
 def get_response_with_metadata(response):
