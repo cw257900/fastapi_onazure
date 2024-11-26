@@ -92,18 +92,7 @@ logging.basicConfig(
 
 async def query_llamaindex(
     prompt: str, top_k: int =5,  persist_dir: str = PERSIST_DIR ) -> List[Dict[str, Any]]:
-    """
-    Queries the index using the synthesizer with metadata.
-
-    Args:
-        prompt (str): The query string.
-        top_k (int): Number of top results to retrieve.
-        pdf_file_path (str): Path to the directory containing PDF files.
-        persist_dir (str): Directory to store the index.
-
-    Returns:
-        List[Dict[str, Any]]: List of formatted query results.
-    """
+    
 
     try : 
 
@@ -221,11 +210,6 @@ async def query_llamaindex(
         raise
     
 async def create_index ():
-    print (" 333 create_index ")
-
-   
-    
-    print(Settings)
 
     if not os.path.exists("storage/lyft"):
         # load data
@@ -254,12 +238,11 @@ async def create_index ():
         )
         uber_index = load_index_from_storage(storage_context)
 
-    print ( " 333 uber_index " , uber_index)
+ 
     return lyft_index, uber_index
 
-async def query_tools():
 
-    print (" 222 query_tools ")
+async def query_tools():
 
     lyft_index, uber_index = await create_index ()
     lyft_engine = lyft_index.as_query_engine(similarity_top_k=3)
@@ -340,6 +323,7 @@ async def query_agent():
         step_output = agent.run_step(task.task_id)
 
     response = agent.finalize_response(task.task_id)
+    
     print(str(response))
 
 
