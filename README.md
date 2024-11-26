@@ -47,8 +47,6 @@ docker push ragcontainer.azurecr.io/ragapi:build-tag-oct302024
 run app local: az deployment group operation list --resource-group rg-rag --name Microsoft.ContainerInstances-20241030221754
 az deployment group operation list --resource-group rg-rag --name Microsoft.ContainerInstances-20241030221754
 
-# weaviate embeded 
-runs from (port=8079, grpc_port=50050)
 
 # Return objects: API Specification has details
 1. Note:  sample error object for upload ![alt text](image.png)
