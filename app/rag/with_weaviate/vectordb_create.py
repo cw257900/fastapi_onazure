@@ -1,24 +1,24 @@
 import os
 import json
+import asyncio
+import sys
 import datetime
 from datetime import datetime, timezone
 # Get the current datetime in UTC and format it as RFC3339
 upload_date = datetime.now(timezone.utc).isoformat()
 
-import asyncio
-import sys
-import traceback 
+
 
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 import weaviate
 from weaviate.classes.init import Auth
 from weaviate.exceptions import WeaviateBaseError 
 from weaviate.util import generate_uuid5
-from langchain_huggingface import HuggingFaceEmbeddings
-import  vectordb_create_schema as create_schema
-import logging 
 
+
+import logging 
 # Configure logging for development
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -33,11 +33,11 @@ logging.basicConfig(
 # those imports used in testing from main
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from chunking import chunking_recursiveCharacterTextSplitter
-from embeddings import  embedding_openai 
 from vector_stores import vector_stores    as vector_store
-import vectordb_create_schema as vectordb_create_schema
 from configs import configs
 from utils import utils
+import vectordb_create_schema as vectordb_create_schema
+import vectordb_create_schema as create_schema
 
 pdf_file_path = configs.pdf_file_path
 #class_name = configs.class_name class name is from down process calls

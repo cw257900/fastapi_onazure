@@ -2,25 +2,16 @@ import os
 import sys
 import logging
 import json
-import traceback
-from typing import Optional
 from azure.storage.blob import BlobServiceClient
-from azure.storage.blob import ContainerClient
-from azure.storage.blob.aio import BlobClient
-from weaviate.embedded import EmbeddedOptions
-from datetime import datetime
-from langchain_community.document_loaders import PyPDFLoader
 import tempfile
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-import vectordb_create as create
 import asyncio  # Add this import
-from utils import utils
+
 
 # Add the parent directory (or wherever "with_pinecone" is located) to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils import utils
 from vector_stores import vector_stores as vector_store
-
+import vectordb_create as create
 from configs import configs
 class_name = configs.class_name
 blob_path = configs.blob_path
@@ -135,7 +126,7 @@ class PDFProcessor:
 
 
 
-    async def read_pdf_from_blob(self, container_name="sacontainer", blob_name: str = configs.blob_name):
+    async def read_pdf_from_blob(self, client, container_name="sacontainer", blob_name: str = configs.blob_name):
         temp_pdf_path = None
         try: 
             logging.info(f" === *blob.py - Processing blob: {blob_name}")
@@ -183,7 +174,8 @@ def main():
     # Initialize processor
     processor = PDFProcessor()
     client = utils.get_client()
-    asyncio.run(processor.upsert_chunks_to_store(client))
+    #asyncio.run(processor.upsert_chunks_to_store(client))
+    asyncio.run(processor.read_pdf_from_blob(client))
 
 if __name__ == "__main__":
     main()

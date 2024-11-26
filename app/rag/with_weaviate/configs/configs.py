@@ -15,14 +15,14 @@ logging.basicConfig(
 )
 
 # LlamaIndex
-LLAMAINDEX_PERSISTENCE_PATH ="./llamaindex_data"
+LLAMAINDEX_PERSISTENCE_PATH ="./storage/llama_data"
 
 
 
 #weaviate and azure 
 class_name = "PDF_COLLECTION"
 WEAVIATE_STORE_DESCRIPTION="collections"
-WEAVIATE_PERSISTENCE_PATH="./weaviate_data"
+WEAVIATE_PERSISTENCE_PATH="./storage/weaviate_data"
 
 # Set API keys and Weaviate URL from environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

@@ -250,6 +250,7 @@ async def query_llamaindex(
 if __name__ == "__main__":
    
     # Define your query and add filters during query execution
-    query = "anything about connie?"
-    specific_file_name = "what_is_constifitution.pdf"
-    asyncio.run(upload_blob_to_llamaindex ())
+    query = "summerize constitution"
+    
+    #asyncio.run(upload_blob_to_llamaindex ())
+    asyncio.run(query_llamaindex(query,2))
