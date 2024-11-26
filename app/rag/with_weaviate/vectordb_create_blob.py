@@ -2,16 +2,8 @@ import os
 import sys
 import logging
 import json
-
-from typing import Optional
 from azure.storage.blob import BlobServiceClient
-from azure.storage.blob import ContainerClient
-from azure.storage.blob.aio import BlobClient
-from weaviate.embedded import EmbeddedOptions
-
-from langchain_community.document_loaders import PyPDFLoader
 import tempfile
-
 import asyncio  # Add this import
 
 
