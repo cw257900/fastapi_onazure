@@ -126,7 +126,7 @@ class PDFProcessor:
 
 
 
-    async def read_pdf_from_blob(self, container_name="sacontainer", blob_name: str = configs.blob_name):
+    async def read_pdf_from_blob(self, client, container_name="sacontainer", blob_name: str = configs.blob_name):
         temp_pdf_path = None
         try: 
             logging.info(f" === *blob.py - Processing blob: {blob_name}")
@@ -174,7 +174,8 @@ def main():
     # Initialize processor
     processor = PDFProcessor()
     client = utils.get_client()
-    asyncio.run(processor.upsert_chunks_to_store(client))
+    #asyncio.run(processor.upsert_chunks_to_store(client))
+    asyncio.run(processor.read_pdf_from_blob(client))
 
 if __name__ == "__main__":
     main()
