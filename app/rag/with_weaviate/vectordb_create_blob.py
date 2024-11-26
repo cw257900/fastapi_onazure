@@ -2,25 +2,24 @@ import os
 import sys
 import logging
 import json
-import traceback
+
 from typing import Optional
 from azure.storage.blob import BlobServiceClient
 from azure.storage.blob import ContainerClient
 from azure.storage.blob.aio import BlobClient
 from weaviate.embedded import EmbeddedOptions
-from datetime import datetime
+
 from langchain_community.document_loaders import PyPDFLoader
 import tempfile
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-import vectordb_create as create
+
 import asyncio  # Add this import
-from utils import utils
+
 
 # Add the parent directory (or wherever "with_pinecone" is located) to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils import utils
 from vector_stores import vector_stores as vector_store
-
+import vectordb_create as create
 from configs import configs
 class_name = configs.class_name
 blob_path = configs.blob_path
