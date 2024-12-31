@@ -1,5 +1,8 @@
 # fastapi_onazure
 
+## Summary
+This repository provides a comprehensive solution for building a Retrieval-Augmented Generation (RAG) system leveraging LlamaIndex with tree agents for fine-tuning. It uses Weaviate as the vector database and LlamaIndex's local storage for efficient querying. The solution is wrapped in a FastAPI application, packaged into a Docker image, and can be deployed to any container platform, including Azure.
+
 ## Repository Overview
 This repository provides the following features:
 
@@ -46,7 +49,7 @@ This repository provides the following features:
    pip freeze > requirements.txt
    ```
 
-### Running Locallygit p
+### Running Locally
 
 1. **Activate Virtual Environment:**
    ```bash
