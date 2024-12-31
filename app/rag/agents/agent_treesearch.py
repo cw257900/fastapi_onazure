@@ -132,9 +132,8 @@ async def query_llamaindex(
             response_mode="tree_summarize",
             use_async=True,
         )
+        
         vector_query_engine = vector_index.as_query_engine()
-
-
         vector_engine=QueryEngineTool.from_defaults (
             query_engine=vector_query_engine,
             description=("vector query"),

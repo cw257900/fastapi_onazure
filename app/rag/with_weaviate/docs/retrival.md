@@ -19,9 +19,6 @@ python
 client = weaviate.Client("http://localhost:8080")
 
 
-
-
-
 # Update the schema to set the vectorizer to text2vec-transformers
 client.schema.update_class({
     "class": "PDF_COLLECTION",
