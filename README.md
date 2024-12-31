@@ -46,7 +46,7 @@ This repository provides the following features:
    pip freeze > requirements.txt
    ```
 
-### Running Locally
+### Running Locallygit p
 
 1. **Activate Virtual Environment:**
    ```bash
