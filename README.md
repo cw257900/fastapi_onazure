@@ -1,56 +1,148 @@
-# quick fastapi package 
-[fastapi specifications](https://pypi.org/project/fastapi/)
-# weaviate embeded
-[Weaviate Embeded Documentations](https://weaviate.io/developers/weaviate/installation/embedded) 
+# fastapi_onazure
 
-# install libararies
-python3.12 -m venv .venv  
-source .venv/bin/activate
+## Summary
+This repository provides a comprehensive solution for building a Retrieval-Augmented Generation (RAG) system leveraging LlamaIndex with tree agents for fine-tuning. It uses Weaviate as the vector database and LlamaIndex's local storage for efficient querying. The solution is wrapped in a FastAPI application, packaged into a Docker image, and can be deployed to any container platform, including Azure.
 
-pip install "fastapi[all]"
-pip install sentence-transformers  #(sensence-transformer doesn't work with python3.13)
-pip install llama-parse
-pip install llama-index-llms-openai
-pip install llama-index-llms-replicate
-pip install llama-index-embeddings-openai #(need openai key)
-pip install llama-index-core llama-index-readers-file llama-index-llms-ollama 
-pip install llama-index-embeddings-huggingface 
-pip install llama-index-vector-stores-weaviate
-pip install azure-storage-blob
-pip install langchain_community
+## Repository Overview
+This repository provides the following features:
 
-pip freeze > requirements.txt
+1. **RAG with LlamaIndex and Tree Agent**
+   - Leverages LlamaIndex for fine-tuning Retrieval-Augmented Generation (RAG) with tree agent techniques.
 
+2. **Installation and Run Instructions**
+   - Step-by-step guide to set up and run the application locally or on Azure.
 
-# test api locally without image and docker
-1. source .venv/bin/activate
-2. uvicorn app.main:app --port 8001 (default port is 8000)
-3. http://localhost:8000 
-4. validate port and kill hanging process
-ps aux | grep weaviate
-lsof -i :8000 (show the process using the port, default port for embeded port=8079, grpc_port=50051)
-kill -9 <pid>
+3. **Application Flow Diagram**
+   - A flow chart that outlines the architecture and workflow of the application.
 
-# create Dockerfile locally 
-docker build -t ragimage .
-docker run -d -p 80:80 -p 8000:8000 --name rag_container ragimage
-docker run -d -p 80:80 -p 8000:8000 -v $(pwd):/code your_image_name (to use local file in image:)
+---
 
-docker stop <container_id>
-docker rm <container_id>
-docker scout cves local://ragimage:latest (review vulnerability report )
+## Installation and Setup
 
-# create docker remotely in Azure
-docker login  <container_registry_server_name> -u  <container_user_name> -p <pwd> (login to docker )
-docker build  --platform linux/amd64 -t ragcontainter.azurecr.io/<container_name>:<build-tag-Oct302024>  (docker build with build tag)
-docker push ragcontainer.azurecr.io/ragapi:build-tag-oct302024
-run app local: az deployment group operation list --resource-group rg-rag --name Microsoft.ContainerInstances-20241030221754
-az deployment group operation list --resource-group rg-rag --name Microsoft.ContainerInstances-20241030221754
+### Prerequisites
+- Python 3.12 (Python 3.13 is not compatible with `sentence-transformers`).
+- Docker (optional for containerization).
+- Azure CLI (for deployment on Azure).
 
+### Steps to Install Libraries
 
-# Return objects: API Specification has details
-1. Note:  sample error object for upload ![alt text](image.png)
-   
+1. **Create Virtual Environment:**
+   ```bash
+   python3.12 -m venv .venv
+   source .venv/bin/activate
+   ```
 
-# LlamaIndex
-https://docs.llamaindex.ai/en/stable/understanding/querying/querying/
+2. **Install Required Libraries:**
+   ```bash
+   pip install "fastapi[all]"
+   pip install sentence-transformers
+   pip install llama-parse
+   pip install llama-index-llms-openai
+   pip install llama-index-llms-replicate
+   pip install llama-index-embeddings-openai
+   pip install llama-index-core llama-index-readers-file
+   pip install llama-index-llms-ollama
+   pip install llama-index-embeddings-huggingface
+   pip install llama-index-vector-stores-weaviate
+   pip install azure-storage-blob
+   pip install langchain_community
+   pip freeze > requirements.txt
+   ```
+
+### Running Locally
+
+1. **Activate Virtual Environment:**
+   ```bash
+   source .venv/bin/activate
+   ```
+
+2. **Run the Application:**
+   ```bash
+   uvicorn app.main:app --port 8001
+   ```
+   - Default port: `8000`
+   - Local URL: [http://localhost:8000](http://localhost:8000)
+
+3. **Debugging Ports:**
+   - Validate and kill hanging processes:
+     ```bash
+     ps aux | grep weaviate
+     lsof -i :8000
+     kill -9 <process_id>
+     ```
+
+### Docker Setup
+
+#### Local Docker Build and Run
+1. **Create Dockerfile and Build Image:**
+   ```bash
+   docker build -t ragimage .
+   ```
+
+2. **Run Container Locally:**
+   ```bash
+   docker run -d -p 80:80 -p 8000:8000 --name rag_container ragimage
+   ```
+   - To use local files in the container:
+     ```bash
+     docker run -d -p 80:80 -p 8000:8000 -v $(pwd):/code your_image_name
+     ```
+
+3. **Stop and Remove Container:**
+   ```bash
+   docker stop <container_id>
+   docker rm <container_id>
+   ```
+
+4. **Vulnerability Report:**
+   ```bash
+   docker scout cves local://ragimage:latest
+   ```
+
+#### Azure Deployment
+1. **Login to Azure Container Registry:**
+   ```bash
+   docker login <container_registry_server_name> -u <container_user_name> -p
+   ```
+
+2. **Build and Push Docker Image:**
+   ```bash
+   docker build --platform linux/amd64 -t ragcontainer.azurecr.io/<container_name>:<build_tag>
+   docker push ragcontainer.azurecr.io/ragapi:<build_tag>
+   ```
+
+3. **Run App on Azure:**
+   ```bash
+   az deployment group operation list --resource-group rg-rag --name Microsoft.ContainerInstances-<timestamp>
+   ```
+
+---
+
+## Application Flow Diagram
+Below is a conceptual flow chart outlining the architecture and workflow of the application:
+
+```
+[User Query] --> [FastAPI Endpoint] --> [LlamaIndex RAG Engine] --> [Weaviate Vector Store] --> [Query Results]
+```
+
+---
+
+## Additional Documentation
+
+### Weaviate Embedded Documentation
+- Ensure the embedded server runs without conflicts. Default ports:
+  - HTTP: `8079`
+  - gRPC: `50051`
+
+### API Specifications
+- Return objects and sample error objects are detailed in the API documentation.
+
+### LlamaIndex Documentation
+- For further details on LlamaIndex querying:
+  [LlamaIndex Documentation](https://docs.llamaindex.ai/en/stable/understanding/querying/querying/)
+
+---
+
+## Notes
+- Use Python 3.12 for compatibility with `sentence-transformers`.
+- Replace `datetime.datetime.utcnow()` with timezone-aware objects like `datetime.datetime.now(datetime.UTC)` for compliance with `DeprecationWarning`.
