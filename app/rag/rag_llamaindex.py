@@ -40,7 +40,8 @@ from with_weaviate.configs import configs
 # Global variables
 pdf_file_path = configs.pdf_file_path
 PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
-os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+if configs.OPENAI_API_KEY:
+    os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
 blob_path = configs.blob_path
 blob_name = configs.blob_name
 container_name = configs.AZURE_CONTAINER_NAME
@@ -145,6 +146,10 @@ async def upload_to_llamaindex(pdf_file_path = pdf_file_path) -> Optional[Vector
 
     logging.info ( f" === *index.py - uploading this folder: {pdf_file_path}")
 
+    if not pdf_file_path:
+        logging.error("PDF file path is not configured")
+        return None
+        
     for filename in os.listdir(pdf_file_path):
 
         if filename == '.DS_Store' or not filename.lower().endswith('.pdf'):
