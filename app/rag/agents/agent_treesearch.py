@@ -62,7 +62,10 @@ from with_weaviate.configs import configs
 # Global variables
 pdf_file_path = configs.pdf_file_path
 PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
-os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+if configs.OPENAI_API_KEY:
+    os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+else:
+    raise ValueError("OPENAI_API_KEY is required but not set in environment variables")
 
 llm = OpenAI(model="gpt-4-turbo", temperature=0.6, api_key=os.environ["OPENAI_API_KEY"])
 embed_model=OpenAIEmbedding(

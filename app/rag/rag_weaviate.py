@@ -114,7 +114,7 @@ if __name__ =="__main__" :
     #rag_retrieval("What is a Constitution? Principles and Concepts", limit=3, alpha=0.75)
 
     asyncio.run(rag_upload(client))
-    utils.get_total_object_count()
+    utils.get_total_object_count(client)
     
     #response = requests.get("http://localhost:8079/v1/schema")
-    #logging.info (f" === utils.py \n {response.json()} \n") 
+    #logging.info (f" === utils.py \n {response.json()} \n")  
