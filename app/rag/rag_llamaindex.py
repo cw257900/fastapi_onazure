@@ -42,6 +42,10 @@ pdf_file_path = configs.pdf_file_path
 PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
 if configs.OPENAI_API_KEY:
     os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+
+else:
+    raise ValueError("OPENAI_API_KEY is required but not set in environment variables")
+
 blob_path = configs.blob_path
 blob_name = configs.blob_name
 container_name = configs.AZURE_CONTAINER_NAME
@@ -147,9 +151,9 @@ async def upload_to_llamaindex(pdf_file_path = pdf_file_path) -> Optional[Vector
     logging.info ( f" === *index.py - uploading this folder: {pdf_file_path}")
 
     if not pdf_file_path:
-        logging.error("PDF file path is not configured")
-        return None
-        
+
+        raise ValueError("pdf_file_path is None - data directory not found")
+
     for filename in os.listdir(pdf_file_path):
 
         if filename == '.DS_Store' or not filename.lower().endswith('.pdf'):

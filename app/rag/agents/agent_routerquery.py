@@ -17,7 +17,10 @@ from with_weaviate.configs import configs
 # Global variables
 pdf_file_path = configs.pdf_file_path
 PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
-os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+if configs.OPENAI_API_KEY:
+    os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+else:
+    raise ValueError("OPENAI_API_KEY is required but not set in environment variables")
 
 from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.openai import OpenAIEmbedding

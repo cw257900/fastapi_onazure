@@ -28,7 +28,12 @@ pdf_file_path = configs.pdf_file_path
 class_name =configs.class_name
 class_description =configs.WEAVIATE_STORE_DESCRIPTION
 if configs.OPENAI_API_KEY:
+
     os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
+
+else:
+    raise ValueError("OPENAI_API_KEY is required but not set in environment variables")
+
 
 
 def create_error_response(error_code: str, custom_details: str | None = None) -> dict:

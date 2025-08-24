@@ -20,6 +20,9 @@ PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
 if configs.OPENAI_API_KEY:
     os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
     os.environ["OPENAI_APIKEY"] = configs.OPENAI_API_KEY
+else:
+    raise ValueError("OPENAI_API_KEY is required but not set in environment variables")
+
 
 from rag import rag_llamaindex, rag_weaviate
 
