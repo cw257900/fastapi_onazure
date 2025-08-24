@@ -49,7 +49,7 @@ OPENAI_API_KEY = configs.OPENAI_API_KEY
 # Assuming embeddings.embeddings.aembed_documents is async and we are running this in an async environment
 async def upsert_embeddings_to_vector_store(pdf_file_path, vector_store,  class_name):
     try:
-        print(f"1. Inserting chunks of {pdf_file_path} - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"1. Inserting chunks of {pdf_file_path} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         docs = chunking_recursiveCharacterTextSplitter.get_chunked_doc(pdf_file_path)
         client = vector_store.create_client()
@@ -59,6 +59,7 @@ async def upsert_embeddings_to_vector_store(pdf_file_path, vector_store,  class_
         # Iterate through the processed docs and insert them into Weaviate
         for idx, doc in enumerate(docs):
             # Generate embeddings for the document page content, openai , next 1 line
+            from embeddings import embedding_openai
             embedding = await embedding_openai.embeddings.aembed_documents([doc.page_content])
 
             """
@@ -88,12 +89,12 @@ async def upsert_embeddings_to_vector_store(pdf_file_path, vector_store,  class_
                 #vector=embedding #hugging face only 
             )
 
-            print(f"Inserted: Page {page_number} - Chunk {idx} - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"Inserted: Page {page_number} - Chunk {idx} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             #print(embedding[0])
 
 
     
-        print(f"Embeddings uploaded - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Embeddings uploaded - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     except Exception as e:
         print(f"Error: {e}")
@@ -295,6 +296,9 @@ async def upsert_chunks_to_store(
 
 async def main ():   
     pdf_file_path=configs.pdf_file_path
+    if not pdf_file_path:
+        logging.error("PDF file path is not configured")
+        return
     client = utils.get_client()
     class_name = utils.class_name
     status = await upsert_chunks_to_store(pdf_file_path, client, class_name)

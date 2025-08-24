@@ -21,6 +21,7 @@ LLAMAINDEX_PERSISTENCE_PATH ="./storage/llama_data"
 
 #weaviate and azure 
 class_name = "PDF_COLLECTION"
+WEAVIATE_STORE_NAME = "PDF_COLLECTION"
 WEAVIATE_STORE_DESCRIPTION="collections"
 WEAVIATE_PERSISTENCE_PATH="./storage/weaviate_data"
 

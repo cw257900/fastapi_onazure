@@ -19,8 +19,10 @@ pdf_file_path = configs.pdf_file_path
 PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
 if configs.OPENAI_API_KEY:
     os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+    os.environ["OPENAI_APIKEY"] = configs.OPENAI_API_KEY
 else:
     raise ValueError("OPENAI_API_KEY is required but not set in environment variables")
+
 
 from rag import rag_llamaindex, rag_weaviate
 
@@ -94,9 +96,9 @@ async def upload(
         if type == "weaviate":
             response = await rag_weaviate.rag_upload()
         elif type == "llamaindex":
-            #response = await rag_llamaindex.upload_to_llamaindex()
-            response = await rag_llamaindex.upload_blob_to_llamaindex()
-            response = {"index_summary": str(response)} #convert response to str 
+            response = await rag_llamaindex.upload_to_llamaindex()
+            # response = await rag_llamaindex.upload_blob_to_llamaindex()  # Disabled Azure blob storage
+            response = {"index_summary": str(response)} #convert response to str
         else:
             raise ValueError(f"Invalid type specified: {type}")
 
@@ -170,7 +172,7 @@ async def query_system(
             response = await rag_llamaindex.query_llamaindex(ask, top_k)
             
         elif type == "weaviate":
-            response = rag_weaviate.rag_retrieval(ask, limit=top_k)
+            response = await run_in_threadpool(rag_weaviate.rag_retrieval, ask, limit=top_k)
         else:
             raise ValueError(f"Invalid type specified: {type}")
 

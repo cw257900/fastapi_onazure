@@ -54,7 +54,7 @@ def load_image(image_path):
 
 def to_base64(path):
     with open(path, 'rb') as file:
-        return base64.base64encode(file.read()).decode('utf-8')
+        return base64.b64encode(file.read()).decode('utf-8')
 
 def load_image_matplot(image_path):
     """Loads an image from a file path."""
@@ -102,7 +102,10 @@ def upsert_to_vectorstore(client, image_path = image_path):
     start_time = time.time()
     with collection.batch.dynamic() as batch :
 
-        file_paths = [f for f in Path(image_path).iterdir() if f.is_file()]
+        if image_path:
+            file_paths = [f for f in Path(image_path).iterdir() if f.is_file()]
+        else:
+            file_paths = []
 
         for file_path in file_paths :
 

@@ -42,8 +42,10 @@ pdf_file_path = configs.pdf_file_path
 PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
 if configs.OPENAI_API_KEY:
     os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+
 else:
     raise ValueError("OPENAI_API_KEY is required but not set in environment variables")
+
 blob_path = configs.blob_path
 blob_name = configs.blob_name
 container_name = configs.AZURE_CONTAINER_NAME
@@ -149,6 +151,7 @@ async def upload_to_llamaindex(pdf_file_path = pdf_file_path) -> Optional[Vector
     logging.info ( f" === *index.py - uploading this folder: {pdf_file_path}")
 
     if not pdf_file_path:
+
         raise ValueError("pdf_file_path is None - data directory not found")
 
     for filename in os.listdir(pdf_file_path):
@@ -212,8 +215,8 @@ async def query_llamaindex(
 
     try : 
         if not os.path.exists(PERSIST_DIR):
-            #index = await upload_to_llamaindex()
-            index = await upload_blob_to_llamaindex()
+            index = await upload_to_llamaindex()
+            # index = await upload_blob_to_llamaindex()  # Disabled Azure blob storage
         else:
             storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
             index = load_index_from_storage(storage_context)
