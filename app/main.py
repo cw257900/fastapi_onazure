@@ -17,7 +17,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from rag.with_weaviate.configs import configs
 pdf_file_path = configs.pdf_file_path
 PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
-os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+if configs.OPENAI_API_KEY:
+    os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
 
 from rag import rag_llamaindex, rag_weaviate
 
@@ -167,7 +168,7 @@ async def query_system(
             response = await rag_llamaindex.query_llamaindex(ask, top_k)
             
         elif type == "weaviate":
-            response = rag_weaviate.rag_retrieval(ask, limit=top_k)
+            response = await run_in_threadpool(rag_weaviate.rag_retrieval, ask, limit=top_k)
         else:
             raise ValueError(f"Invalid type specified: {type}")
 

@@ -27,10 +27,11 @@ vector_store = vector_store
 pdf_file_path = configs.pdf_file_path
 class_name =configs.class_name
 class_description =configs.WEAVIATE_STORE_DESCRIPTION
-os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
+if configs.OPENAI_API_KEY:
+    os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
 
 
-def create_error_response(error_code: str, custom_details: str = None) -> dict:
+def create_error_response(error_code: str, custom_details: str | None = None) -> dict:
     error = configs.ERROR_CODES[error_code].copy()
     if custom_details:
         error["details"] = custom_details
@@ -39,7 +40,7 @@ def create_error_response(error_code: str, custom_details: str = None) -> dict:
     return {"error": error}
 
 
-def query(query_text: str, client, class_name: str = class_name, limit: int =2, alpha =0.75) -> dict:
+def query(query_text: str, client, class_name: str = class_name, limit: int =2, alpha =0.75):
     """
     Perform a hybrid search query on the vector database.
     
@@ -49,7 +50,7 @@ def query(query_text: str, client, class_name: str = class_name, limit: int =2, 
         limit: Maximum number of results to return
         
     Returns:
-        dict: Search results or error response
+        dict or response object: Search results or error response
     """
     logging.info(f" === *retrieve.py - alpha {alpha}")
     logging.info(f" === *retrieve.py - limit {limit}")
@@ -62,8 +63,8 @@ def query(query_text: str, client, class_name: str = class_name, limit: int =2, 
         
         collection = client.collections.get(class_name)
         
-        if query is None:
-            pass
+        if query_text is None:
+            return create_error_response("R003", custom_details="Query text cannot be None")
         else:      
             response = collection.query.hybrid(
                 query=query_text,
@@ -141,14 +142,20 @@ def retrieve_semantic_vector_search():
 
     # provide summary of constitution
 
-    hybrid_rlt =  query (ask=question, limit=3)
+    client = utils.get_client()
+    hybrid_rlt = query(question, client, limit=3)
 
-    for o in hybrid_rlt.objects:
+    if isinstance(hybrid_rlt, dict) and 'error' in hybrid_rlt:
+        print(f"Error in query: {hybrid_rlt}")
+        return
+    
+    if hasattr(hybrid_rlt, 'objects'):
+        for o in hybrid_rlt.objects:
        
-        print(json.dumps(o.properties, indent=4))
-        print(o.metadata.score)
-        print(o.metadata.explain_score)
-        print()
+            print(json.dumps(o.properties, indent=4))
+            print(o.metadata.score)
+            print(o.metadata.explain_score)
+            print()
 
     return 
 
@@ -163,9 +170,9 @@ def main():
             return 
     except Exception as e: 
         idx =0
-        for o in response.objects:
-
-            json_object =[]
+        if hasattr(response, 'objects'):
+            for o in response.objects:
+                json_object =[]
             
             json_object = {
                 "page_content": o.properties.get("page_content"),

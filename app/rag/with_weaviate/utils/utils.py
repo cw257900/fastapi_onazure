@@ -2,7 +2,6 @@ import weaviate
 import os
 import sys
 import json
-import weaviate
 from weaviate.classes.query import Filter
 from dotenv import load_dotenv
 from weaviate.exceptions import WeaviateBaseError
@@ -40,7 +39,7 @@ def delete_by_uuid (client, class_name, uuid) :
         uuid
     )
 
-def get_client() :
+def get_client():
     try:
         return vector_store.create_client()
     except Exception as e:
@@ -147,8 +146,9 @@ def verify_weaviate_v4_contents( collection):
 
 def main():
     client = get_client()
-    collection = client.collections.get("PDF_COLLECTION")
-    get_total_object_count( client)
+    if client:
+        collection = client.collections.get("PDF_COLLECTION")
+        get_total_object_count(client)
    
    
    
