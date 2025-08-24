@@ -25,6 +25,7 @@ logging.basicConfig(
 
 if configs.OPENAI_API_KEY:
     os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
+    os.environ['OPENAI_APIKEY']=configs.OPENAI_API_KEY
 
 
 ## Function to create and return a Weaviate client object
