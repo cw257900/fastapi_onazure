@@ -93,9 +93,9 @@ async def upload(
         if type == "weaviate":
             response = await rag_weaviate.rag_upload()
         elif type == "llamaindex":
-            #response = await rag_llamaindex.upload_to_llamaindex()
-            response = await rag_llamaindex.upload_blob_to_llamaindex()
-            response = {"index_summary": str(response)} #convert response to str 
+            response = await rag_llamaindex.upload_to_llamaindex()
+            # response = await rag_llamaindex.upload_blob_to_llamaindex()  # Disabled Azure blob storage
+            response = {"index_summary": str(response)} #convert response to str
         else:
             raise ValueError(f"Invalid type specified: {type}")
 

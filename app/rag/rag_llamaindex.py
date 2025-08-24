@@ -211,8 +211,8 @@ async def query_llamaindex(
 
     try : 
         if not os.path.exists(PERSIST_DIR):
-            #index = await upload_to_llamaindex()
-            index = await upload_blob_to_llamaindex()
+            index = await upload_to_llamaindex()
+            # index = await upload_blob_to_llamaindex()  # Disabled Azure blob storage
         else:
             storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
             index = load_index_from_storage(storage_context)
