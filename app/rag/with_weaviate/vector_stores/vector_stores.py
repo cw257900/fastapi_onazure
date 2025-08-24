@@ -23,13 +23,14 @@ logging.basicConfig(
 )
 
 
-os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
+if configs.OPENAI_API_KEY:
+    os.environ['OPENAI_API_KEY']=configs.OPENAI_API_KEY
 
 
 ## Function to create and return a Weaviate client object
 def create_client():
 
-    headers = {"X-OpenAI-Api-Key": configs.OPENAI_API_KEY}
+    headers = {"X-OpenAI-Api-Key": configs.OPENAI_API_KEY} if configs.OPENAI_API_KEY else {}
 
     # Initialize connection params
     """
