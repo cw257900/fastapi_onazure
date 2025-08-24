@@ -39,7 +39,10 @@ from with_weaviate.configs import configs
 
 pdf_file_path = configs.pdf_file_path
 PERSIST_DIR = configs.LLAMAINDEX_PERSISTENCE_PATH
-os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+if configs.OPENAI_API_KEY:
+    os.environ["OPENAI_API_KEY"] = configs.OPENAI_API_KEY
+else:
+    raise ValueError("OPENAI_API_KEY is required but not set in environment variables")
 
 
 # Configure logging for development
